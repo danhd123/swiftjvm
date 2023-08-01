@@ -8,6 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		BC8820032A7218F900CD7BB2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820022A7218F900CD7BB2 /* main.swift */; };
+		BC88200B2A721CE200CD7BB2 /* ClassFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC88200A2A721CE200CD7BB2 /* ClassFile.swift */; };
+		BC88200D2A721D1500CD7BB2 /* ClassConstant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC88200C2A721D1500CD7BB2 /* ClassConstant.swift */; };
+		BC88200F2A721D4E00CD7BB2 /* FieldInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC88200E2A721D4E00CD7BB2 /* FieldInfo.swift */; };
+		BC8820112A721D7500CD7BB2 /* AttributeInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820102A721D7500CD7BB2 /* AttributeInfo.swift */; };
+		BC8820132A721D9C00CD7BB2 /* Annotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820122A721D9C00CD7BB2 /* Annotation.swift */; };
+		BC8820152A721DC800CD7BB2 /* MethodInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820142A721DC800CD7BB2 /* MethodInfo.swift */; };
+		BC8820172A721E5C00CD7BB2 /* StackMapTableAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820162A721E5C00CD7BB2 /* StackMapTableAttribute.swift */; };
+		BC8820192A7357A800CD7BB2 /* TypeAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820182A7357A800CD7BB2 /* TypeAnnotation.swift */; };
+		BC8F66762A78DDF600F58D35 /* Complex.java in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66752A78DDF600F58D35 /* Complex.java */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +34,16 @@
 /* Begin PBXFileReference section */
 		BC881FFF2A7218F800CD7BB2 /* swiftjvm */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = swiftjvm; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC8820022A7218F900CD7BB2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		BC88200A2A721CE200CD7BB2 /* ClassFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFile.swift; sourceTree = "<group>"; };
+		BC88200C2A721D1500CD7BB2 /* ClassConstant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassConstant.swift; sourceTree = "<group>"; };
+		BC88200E2A721D4E00CD7BB2 /* FieldInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldInfo.swift; sourceTree = "<group>"; };
+		BC8820102A721D7500CD7BB2 /* AttributeInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributeInfo.swift; sourceTree = "<group>"; };
+		BC8820122A721D9C00CD7BB2 /* Annotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Annotation.swift; sourceTree = "<group>"; };
+		BC8820142A721DC800CD7BB2 /* MethodInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MethodInfo.swift; sourceTree = "<group>"; };
+		BC8820162A721E5C00CD7BB2 /* StackMapTableAttribute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackMapTableAttribute.swift; sourceTree = "<group>"; };
+		BC8820182A7357A800CD7BB2 /* TypeAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeAnnotation.swift; sourceTree = "<group>"; };
+		BC8F66752A78DDF600F58D35 /* Complex.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; name = Complex.java; path = swiftjvm/Tests/Complex.java; sourceTree = SOURCE_ROOT; };
+		BC8F66782A78E2FF00F58D35 /* Complex.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Complex.class; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,9 +76,35 @@
 		BC8820012A7218F900CD7BB2 /* swiftjvm */ = {
 			isa = PBXGroup;
 			children = (
+				BC8F66772A78DE1300F58D35 /* Tests */,
+				BC8820092A721CD000CD7BB2 /* ClassFile */,
 				BC8820022A7218F900CD7BB2 /* main.swift */,
 			);
 			path = swiftjvm;
+			sourceTree = "<group>";
+		};
+		BC8820092A721CD000CD7BB2 /* ClassFile */ = {
+			isa = PBXGroup;
+			children = (
+				BC8820122A721D9C00CD7BB2 /* Annotation.swift */,
+				BC8820102A721D7500CD7BB2 /* AttributeInfo.swift */,
+				BC88200C2A721D1500CD7BB2 /* ClassConstant.swift */,
+				BC88200A2A721CE200CD7BB2 /* ClassFile.swift */,
+				BC88200E2A721D4E00CD7BB2 /* FieldInfo.swift */,
+				BC8820142A721DC800CD7BB2 /* MethodInfo.swift */,
+				BC8820162A721E5C00CD7BB2 /* StackMapTableAttribute.swift */,
+				BC8820182A7357A800CD7BB2 /* TypeAnnotation.swift */,
+			);
+			path = ClassFile;
+			sourceTree = "<group>";
+		};
+		BC8F66772A78DE1300F58D35 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				BC8F66782A78E2FF00F58D35 /* Complex.class */,
+				BC8F66752A78DDF600F58D35 /* Complex.java */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -120,7 +165,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BC8F66762A78DDF600F58D35 /* Complex.java in Sources */,
+				BC8820152A721DC800CD7BB2 /* MethodInfo.swift in Sources */,
+				BC8820192A7357A800CD7BB2 /* TypeAnnotation.swift in Sources */,
+				BC88200D2A721D1500CD7BB2 /* ClassConstant.swift in Sources */,
+				BC8820112A721D7500CD7BB2 /* AttributeInfo.swift in Sources */,
+				BC88200B2A721CE200CD7BB2 /* ClassFile.swift in Sources */,
+				BC88200F2A721D4E00CD7BB2 /* FieldInfo.swift in Sources */,
+				BC8820132A721D9C00CD7BB2 /* Annotation.swift in Sources */,
 				BC8820032A7218F900CD7BB2 /* main.swift in Sources */,
+				BC8820172A721E5C00CD7BB2 /* StackMapTableAttribute.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
