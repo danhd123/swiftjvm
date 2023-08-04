@@ -25,7 +25,6 @@ struct ClassFile {
         
     }
     
-    let data : Data
     let magic : UInt32
     let minorVersion : UInt16
     let majorVersion : UInt16
@@ -47,16 +46,18 @@ struct ClassFile {
             return nil
         }
         var cursor = 0
-        self.data = data
-        (magic, minorVersion, majorVersion, constantPoolCount) = ClassFile.parseHeader(&cursor, data:self.data)
+        (magic, minorVersion, majorVersion, constantPoolCount) = ClassFile.parseHeader(&cursor, data:data)
         var constants = ConstantPool()
-        for var i in 1..<constantPoolCount {
-            let tag = ClassConstant.Tag(rawValue: readFromData(data, cursor: &cursor))
-            let constant = ClassConstant.withTag(tag!, cursor: &cursor, data: self.data)
+        var i: UInt16 = 1
+        while i < constantPoolCount {
+            let tagVal: UInt8 = readFromData(data, cursor: &cursor)
+            let tag = ClassConstant.Tag(rawValue: tagVal)
+            let constant = ClassConstant.withTag(tag!, cursor: &cursor, data: data)
             constants[i] = constant
-            if (constant.tag == ClassConstant.Tag.long || constant.tag == ClassConstant.Tag.double) {
+            if constant.tag == ClassConstant.Tag.long || constant.tag == ClassConstant.Tag.double {
                 i += 1
             }
+            i += 1
         }
         constantPool = constants
         accessFlags = AccessFlags(rawValue: NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))

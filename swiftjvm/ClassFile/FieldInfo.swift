@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct FieldInfo {
+class FieldInfo {
     
     struct AccessFlags: OptionSet {
         let rawValue: UInt16

@@ -25,4 +25,8 @@ public class Complex implements Cloneable, Serializable {
     public double abs() {
         return Math.sqrt(this.real * this.real + this.imag * this.imag);
     }
+    
+    public static void main(String[] args) {
+        Complex test = new Complex(1.0, 5.3);
+    }
 }

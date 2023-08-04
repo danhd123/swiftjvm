@@ -7,8 +7,20 @@
 
 import Foundation
 
-print("Hello, World!")
-let url = URL.init(filePath: "/Users/danielhd/src/swiftjvm/swiftjvm/Tests/Complex.class")
-let data = try! Data(contentsOf: url)
-let complex = ClassFile(withData: data)
-print("\(complex)")
+var vm = VM()
+
+var mainFound = false
+for argument in CommandLine.arguments {
+    let url = URL.init(filePath: argument)
+    if url.lastPathComponent == "swiftjvm" {
+        continue
+    }
+    let data = try! Data(contentsOf: url)
+    let classFile = ClassFile(withData: data)
+    if let classFile {
+        print("\(classFile)")
+        vm.loadClass(classFile)
+    }
+    vm.start()
+    
+}

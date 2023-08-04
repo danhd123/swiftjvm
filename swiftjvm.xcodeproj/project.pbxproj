@@ -16,7 +16,17 @@
 		BC8820152A721DC800CD7BB2 /* MethodInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820142A721DC800CD7BB2 /* MethodInfo.swift */; };
 		BC8820172A721E5C00CD7BB2 /* StackMapTableAttribute.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820162A721E5C00CD7BB2 /* StackMapTableAttribute.swift */; };
 		BC8820192A7357A800CD7BB2 /* TypeAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820182A7357A800CD7BB2 /* TypeAnnotation.swift */; };
-		BC8F66762A78DDF600F58D35 /* Complex.java in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66752A78DDF600F58D35 /* Complex.java */; };
+		BC8F667B2A7A415100F58D35 /* VM.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F667A2A7A415100F58D35 /* VM.swift */; };
+		BC8F667D2A7A419000F58D35 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F667C2A7A419000F58D35 /* Thread.swift */; };
+		BC8F667F2A7A41DE00F58D35 /* Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F667E2A7A41DE00F58D35 /* Frame.swift */; };
+		BC8F66812A7A432700F58D35 /* Heap.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66802A7A432700F58D35 /* Heap.swift */; };
+		BC8F66832A7A434400F58D35 /* Object.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66822A7A434400F58D35 /* Object.swift */; };
+		BC8F66852A7A454700F58D35 /* LocalVariable.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66842A7A454700F58D35 /* LocalVariable.swift */; };
+		BC8F66872A7A459500F58D35 /* Operand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66862A7A459500F58D35 /* Operand.swift */; };
+		BC8F66892A7C5CBC00F58D35 /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66882A7C5CBC00F58D35 /* Field.swift */; };
+		BC8F668B2A7C705A00F58D35 /* FieldDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */; };
+		BC8F668D2A7C7B9600F58D35 /* Class.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668C2A7C7B9600F58D35 /* Class.swift */; };
+		BC8F668F2A7C7E8D00F58D35 /* Method.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668E2A7C7E8D00F58D35 /* Method.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -44,6 +54,17 @@
 		BC8820182A7357A800CD7BB2 /* TypeAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeAnnotation.swift; sourceTree = "<group>"; };
 		BC8F66752A78DDF600F58D35 /* Complex.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; name = Complex.java; path = swiftjvm/Tests/Complex.java; sourceTree = SOURCE_ROOT; };
 		BC8F66782A78E2FF00F58D35 /* Complex.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Complex.class; sourceTree = "<group>"; };
+		BC8F667A2A7A415100F58D35 /* VM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VM.swift; sourceTree = "<group>"; };
+		BC8F667C2A7A419000F58D35 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
+		BC8F667E2A7A41DE00F58D35 /* Frame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frame.swift; sourceTree = "<group>"; };
+		BC8F66802A7A432700F58D35 /* Heap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Heap.swift; sourceTree = "<group>"; };
+		BC8F66822A7A434400F58D35 /* Object.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Object.swift; sourceTree = "<group>"; };
+		BC8F66842A7A454700F58D35 /* LocalVariable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalVariable.swift; sourceTree = "<group>"; };
+		BC8F66862A7A459500F58D35 /* Operand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operand.swift; sourceTree = "<group>"; };
+		BC8F66882A7C5CBC00F58D35 /* Field.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Field.swift; sourceTree = "<group>"; };
+		BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldDescriptor.swift; sourceTree = "<group>"; };
+		BC8F668C2A7C7B9600F58D35 /* Class.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Class.swift; sourceTree = "<group>"; };
+		BC8F668E2A7C7E8D00F58D35 /* Method.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Method.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +97,9 @@
 		BC8820012A7218F900CD7BB2 /* swiftjvm */ = {
 			isa = PBXGroup;
 			children = (
-				BC8F66772A78DE1300F58D35 /* Tests */,
+				BC8F66792A7A40FE00F58D35 /* Runtime */,
 				BC8820092A721CD000CD7BB2 /* ClassFile */,
+				BC8F66772A78DE1300F58D35 /* Tests */,
 				BC8820022A7218F900CD7BB2 /* main.swift */,
 			);
 			path = swiftjvm;
@@ -94,6 +116,7 @@
 				BC8820142A721DC800CD7BB2 /* MethodInfo.swift */,
 				BC8820162A721E5C00CD7BB2 /* StackMapTableAttribute.swift */,
 				BC8820182A7357A800CD7BB2 /* TypeAnnotation.swift */,
+				BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */,
 			);
 			path = ClassFile;
 			sourceTree = "<group>";
@@ -105,6 +128,23 @@
 				BC8F66752A78DDF600F58D35 /* Complex.java */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		BC8F66792A7A40FE00F58D35 /* Runtime */ = {
+			isa = PBXGroup;
+			children = (
+				BC8F667A2A7A415100F58D35 /* VM.swift */,
+				BC8F667C2A7A419000F58D35 /* Thread.swift */,
+				BC8F667E2A7A41DE00F58D35 /* Frame.swift */,
+				BC8F66802A7A432700F58D35 /* Heap.swift */,
+				BC8F66822A7A434400F58D35 /* Object.swift */,
+				BC8F66842A7A454700F58D35 /* LocalVariable.swift */,
+				BC8F66862A7A459500F58D35 /* Operand.swift */,
+				BC8F66882A7C5CBC00F58D35 /* Field.swift */,
+				BC8F668C2A7C7B9600F58D35 /* Class.swift */,
+				BC8F668E2A7C7E8D00F58D35 /* Method.swift */,
+			);
+			path = Runtime;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -165,16 +205,26 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC8F66762A78DDF600F58D35 /* Complex.java in Sources */,
+				BC8F66872A7A459500F58D35 /* Operand.swift in Sources */,
+				BC8F667F2A7A41DE00F58D35 /* Frame.swift in Sources */,
 				BC8820152A721DC800CD7BB2 /* MethodInfo.swift in Sources */,
+				BC8F667B2A7A415100F58D35 /* VM.swift in Sources */,
+				BC8F668F2A7C7E8D00F58D35 /* Method.swift in Sources */,
 				BC8820192A7357A800CD7BB2 /* TypeAnnotation.swift in Sources */,
 				BC88200D2A721D1500CD7BB2 /* ClassConstant.swift in Sources */,
 				BC8820112A721D7500CD7BB2 /* AttributeInfo.swift in Sources */,
+				BC8F668D2A7C7B9600F58D35 /* Class.swift in Sources */,
 				BC88200B2A721CE200CD7BB2 /* ClassFile.swift in Sources */,
+				BC8F667D2A7A419000F58D35 /* Thread.swift in Sources */,
 				BC88200F2A721D4E00CD7BB2 /* FieldInfo.swift in Sources */,
+				BC8F66832A7A434400F58D35 /* Object.swift in Sources */,
 				BC8820132A721D9C00CD7BB2 /* Annotation.swift in Sources */,
 				BC8820032A7218F900CD7BB2 /* main.swift in Sources */,
+				BC8F66892A7C5CBC00F58D35 /* Field.swift in Sources */,
 				BC8820172A721E5C00CD7BB2 /* StackMapTableAttribute.swift in Sources */,
+				BC8F66812A7A432700F58D35 /* Heap.swift in Sources */,
+				BC8F668B2A7C705A00F58D35 /* FieldDescriptor.swift in Sources */,
+				BC8F66852A7A454700F58D35 /* LocalVariable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
