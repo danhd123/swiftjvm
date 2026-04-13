@@ -82,7 +82,7 @@ struct VM {
             fatalError("No main method found")
         }
         var mainThread = Thread()
-        let mainFrame = Frame(classFile: mainClass.classFile, constantPool: mainClass.classFile.constantPool, method: mainMethod)
+        let mainFrame = Frame(owningClass: mainClass, method: mainMethod)
         mainThread.stackFrames.append(mainFrame)
         threads.append(mainThread)
         mainThread.execute()

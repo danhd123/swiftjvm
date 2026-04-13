@@ -5,8 +5,10 @@
 //  Created by Daniel DeCovnick on 8/2/23.
 //
 
-import Foundation
-
 struct LocalVariable {
-    
+    var value: Value?
+
+    init(_ value: Value? = nil) {
+        self.value = value
+    }
 }

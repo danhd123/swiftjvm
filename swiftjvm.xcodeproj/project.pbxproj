@@ -39,6 +39,7 @@
 		BC8F66982A7DA35600F58D35 /* Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66972A7DA35600F58D35 /* Runtime.swift */; };
 		BC8F669A2A7DA7BE00F58D35 /* BootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66992A7DA7BE00F58D35 /* BootstrapLoader.swift */; };
 		BC8F669C2A7DA80C00F58D35 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F669B2A7DA80C00F58D35 /* Loader.swift */; };
+		BC9279D22F8D5C0000923392 /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279D32F8D5C0000923393 /* Value.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -84,6 +85,7 @@
 		BC8F66922A7C800100F58D35 /* ClassLoadError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLoadError.swift; sourceTree = "<group>"; };
 		BC8F66942A7C900000F58D35 /* ClassFileError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFileError.swift; sourceTree = "<group>"; };
 		BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UInt8+Extensions.swift"; sourceTree = "<group>"; };
+		BC9279D32F8D5C0000923393 /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		BC8F66932A7CE9FD00F58D35 /* BytecodeInstruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BytecodeInstruction.swift; sourceTree = "<group>"; };
 		BC8F66952A7CF3CE00F58D35 /* Operand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operand.swift; sourceTree = "<group>"; };
 		BC8F66972A7DA35600F58D35 /* Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Runtime.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 				BC8F66802A7A432700F58D35 /* Heap.swift */,
 				BC8F66822A7A434400F58D35 /* Object.swift */,
 				BC8F66842A7A454700F58D35 /* LocalVariable.swift */,
+				BC9279D32F8D5C0000923393 /* Value.swift */,
 				BC8F66882A7C5CBC00F58D35 /* Field.swift */,
 				BC8F668C2A7C7B9600F58D35 /* Class.swift */,
 				BC8F668E2A7C7E8D00F58D35 /* Method.swift */,
@@ -289,6 +292,7 @@
 				BC8F66912A7C800000F58D35 /* ClassLoader.swift in Sources */,
 				BC8F66932A7C800100F58D35 /* ClassLoadError.swift in Sources */,
 				BC8F66952A7C900000F58D35 /* ClassFileError.swift in Sources */,
+				BC9279D22F8D5C0000923392 /* Value.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

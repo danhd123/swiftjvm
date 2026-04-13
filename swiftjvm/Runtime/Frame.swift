@@ -1,5 +1,5 @@
 //
-//  StackFrame.swift
+//  Frame.swift
 //  swiftjvm
 //
 //  Created by Daniel DeCovnick on 8/2/23.
@@ -7,443 +7,336 @@
 
 import Foundation
 
+// MARK: - ExecutionResult
+
+/// Returned by each call to `executeNextInstruction()` so that `Thread.execute()`
+/// can manage the frame stack without Frame holding a back-reference to Thread.
+enum ExecutionResult {
+    /// Execution continues in the current frame.
+    case `continue`
+    /// The current method returned. Pop the frame; if `value` is non-nil and there
+    /// is a caller frame, push the value onto the caller's operand stack.
+    case returned(Value?)
+    /// Push `frame` onto the thread's frame stack and continue execution there.
+    case invoke(frame: Frame)
+}
+
+// MARK: - Argument count parsing
+
+/// Returns the number of arguments encoded in a JVM method descriptor.
+///
+///     "(II)I"                  → 2
+///     "([Ljava/lang/String;)V" → 1
+///     "()V"                   → 0
+func parseArgumentCount(descriptor: String) -> Int {
+    var count = 0
+    var chars = descriptor.dropFirst() // drop leading '('
+    while let c = chars.first, c != ")" {
+        chars = chars.dropFirst()
+        switch c {
+        case "L":
+            count += 1
+            // skip over the fully-qualified class name up to and including ';'
+            while let inner = chars.first, inner != ";" { chars = chars.dropFirst() }
+            chars = chars.dropFirst() // drop ';'
+        case "[":
+            // array-type prefix: the enclosed element type will be counted as the argument
+            continue
+        default:
+            count += 1 // primitive: B C D F I J S Z
+        }
+    }
+    return count
+}
+
+// MARK: - Frame
+
 class Frame {
-    let currentClass: ClassOrModuleOrPackageConstant
+    let owningClass: Class
     let constantPool: ConstantPool
     let method: MethodInfo
     var localVariables: [LocalVariable]
-    var operandStack: [AnyObject]
-    
-    init(classFile: ClassFile, constantPool: ConstantPool, method: MethodInfo, localVariables: [LocalVariable] = [], operandStack: [AnyObject] = []) {
-        self.constantPool = constantPool
-        self.localVariables = localVariables
-        self.operandStack = operandStack
-        self.currentClass = self.constantPool[classFile.thisClassIndex] as! ClassOrModuleOrPackageConstant
-        self.method = method
-        // TODO: figure out how to get the current method. might need to be passed in
+    var operandStack: [Value] = []
+    var pc: Int = 0
+
+    var codeAttribute: CodeAttribute? {
+        method.attributes.first { $0 is CodeAttribute } as? CodeAttribute
     }
-    func executeNextInstruction(data: Data, pc: inout Int) { // this function signature will certainly change
-        let opcode = BytecodeInstruction.Opcode(rawValue: readFromData(data, cursor: &pc))!
-        switch opcode {
-        case .nop:
-            return
-//        case .aconst_null:
-//            <#code#>
-//        case .iconst_m1:
-//            <#code#>
-//        case .iconst_0:
-//            <#code#>
-//        case .iconst_1:
-//            <#code#>
-//        case .iconst_2:
-//            <#code#>
-//        case .iconst_3:
-//            <#code#>
-//        case .iconst_4:
-//            <#code#>
-//        case .iconst_5:
-//            <#code#>
-//        case .lconst_0:
-//            <#code#>
-//        case .lconst_1:
-//            <#code#>
-//        case .fconst_0:
-//            <#code#>
-//        case .fconst_1:
-//            <#code#>
-//        case .fconst_2:
-//            <#code#>
-//        case .dconst_0:
-//            <#code#>
-//        case .dconst_1:
-//            <#code#>
-//        case .bipush:
-//            <#code#>
-//        case .sipush:
-//            <#code#>
-//        case .ldc:
-//            <#code#>
-//        case .ldc_w:
-//            <#code#>
-//        case .ldc2_w:
-//            <#code#>
-//        case .iload:
-//            <#code#>
-//        case .lload:
-//            <#code#>
-//        case .fload:
-//            <#code#>
-//        case .dload:
-//            <#code#>
-//        case .aload:
-//            <#code#>
-//        case .iload_0:
-//            <#code#>
-//        case .iload_1:
-//            <#code#>
-//        case .iload_2:
-//            <#code#>
-//        case .iload_3:
-//            <#code#>
-//        case .lload_0:
-//            <#code#>
-//        case .lload_1:
-//            <#code#>
-//        case .lload_2:
-//            <#code#>
-//        case .lload_3:
-//            <#code#>
-//        case .fload_0:
-//            <#code#>
-//        case .fload_1:
-//            <#code#>
-//        case .fload_2:
-//            <#code#>
-//        case .fload_3:
-//            <#code#>
-//        case .dload_0:
-//            <#code#>
-//        case .dload_1:
-//            <#code#>
-//        case .dload_2:
-//            <#code#>
-//        case .dload_3:
-//            <#code#>
-//        case .aload_0:
-//            <#code#>
-//        case .aload_1:
-//            <#code#>
-//        case .aload_2:
-//            <#code#>
-//        case .aload_3:
-//            <#code#>
-//        case .iaload:
-//            <#code#>
-//        case .laload:
-//            <#code#>
-//        case .faload:
-//            <#code#>
-//        case .daload:
-//            <#code#>
-//        case .aaload:
-//            <#code#>
-//        case .baload:
-//            <#code#>
-//        case .caload:
-//            <#code#>
-//        case .saload:
-//            <#code#>
-//        case .istore:
-//            <#code#>
-//        case .lstore:
-//            <#code#>
-//        case .fstore:
-//            <#code#>
-//        case .dstore:
-//            <#code#>
-//        case .astore:
-//            <#code#>
-//        case .istore_0:
-//            <#code#>
-//        case .istore_1:
-//            <#code#>
-//        case .istore_2:
-//            <#code#>
-//        case .istore_3:
-//            <#code#>
-//        case .lstore_0:
-//            <#code#>
-//        case .lstore_1:
-//            <#code#>
-//        case .lstore_2:
-//            <#code#>
-//        case .lstore_3:
-//            <#code#>
-//        case .fstore_0:
-//            <#code#>
-//        case .fstore_1:
-//            <#code#>
-//        case .fstore_2:
-//            <#code#>
-//        case .fstore_3:
-//            <#code#>
-//        case .dstore_0:
-//            <#code#>
-//        case .dstore_1:
-//            <#code#>
-//        case .dstore_2:
-//            <#code#>
-//        case .dstore_3:
-//            <#code#>
-//        case .astore_0:
-//            <#code#>
-//        case .astore_1:
-//            <#code#>
-//        case .astore_2:
-//            <#code#>
-//        case .astore_3:
-//            <#code#>
-//        case .iastore:
-//            <#code#>
-//        case .lastore:
-//            <#code#>
-//        case .fastore:
-//            <#code#>
-//        case .dastore:
-//            <#code#>
-//        case .aastore:
-//            <#code#>
-//        case .bastore:
-//            <#code#>
-//        case .castore:
-//            <#code#>
-//        case .sastore:
-//            <#code#>
-//        case .pop:
-//            <#code#>
-//        case .pop2:
-//            <#code#>
-//        case .dup:
-//            <#code#>
-//        case .dup_x1:
-//            <#code#>
-//        case .dup_x2:
-//            <#code#>
-//        case .dup2:
-//            <#code#>
-//        case .dup2_x1:
-//            <#code#>
-//        case .dup2_x2:
-//            <#code#>
-//        case .swap:
-//            <#code#>
-//        case .iadd:
-//            <#code#>
-//        case .ladd:
-//            <#code#>
-//        case .fadd:
-//            <#code#>
-//        case .dadd:
-//            <#code#>
-//        case .isub:
-//            <#code#>
-//        case .lsub:
-//            <#code#>
-//        case .fsub:
-//            <#code#>
-//        case .dsub:
-//            <#code#>
-//        case .imul:
-//            <#code#>
-//        case .lmul:
-//            <#code#>
-//        case .fmul:
-//            <#code#>
-//        case .dmul:
-//            <#code#>
-//        case .idiv:
-//            <#code#>
-//        case .ldiv:
-//            <#code#>
-//        case .fdiv:
-//            <#code#>
-//        case .ddiv:
-//            <#code#>
-//        case .irem:
-//            <#code#>
-//        case .lrem:
-//            <#code#>
-//        case .frem:
-//            <#code#>
-//        case .drem:
-//            <#code#>
-//        case .ineg:
-//            <#code#>
-//        case .lneg:
-//            <#code#>
-//        case .fneg:
-//            <#code#>
-//        case .dneg:
-//            <#code#>
-//        case .ishl:
-//            <#code#>
-//        case .lshl:
-//            <#code#>
-//        case .ishr:
-//            <#code#>
-//        case .lshr:
-//            <#code#>
-//        case .iushr:
-//            <#code#>
-//        case .lushr:
-//            <#code#>
-//        case .iand:
-//            <#code#>
-//        case .land:
-//            <#code#>
-//        case .ior:
-//            <#code#>
-//        case .lor:
-//            <#code#>
-//        case .ixor:
-//            <#code#>
-//        case .lxor:
-//            <#code#>
-//        case .iinc:
-//            <#code#>
-//        case .i2l:
-//            <#code#>
-//        case .i2f:
-//            <#code#>
-//        case .i2d:
-//            <#code#>
-//        case .l2i:
-//            <#code#>
-//        case .l2f:
-//            <#code#>
-//        case .l2d:
-//            <#code#>
-//        case .f2i:
-//            <#code#>
-//        case .f2l:
-//            <#code#>
-//        case .f2d:
-//            <#code#>
-//        case .d2i:
-//            <#code#>
-//        case .d2l:
-//            <#code#>
-//        case .d2f:
-//            <#code#>
-//        case .i2b:
-//            <#code#>
-//        case .i2c:
-//            <#code#>
-//        case .i2s:
-//            <#code#>
-//        case .lcmp:
-//            <#code#>
-//        case .fcmpl:
-//            <#code#>
-//        case .fcmpg:
-//            <#code#>
-//        case .dcmpl:
-//            <#code#>
-//        case .dcmpg:
-//            <#code#>
-//        case .ifeq:
-//            <#code#>
-//        case .ifne:
-//            <#code#>
-//        case .iflt:
-//            <#code#>
-//        case .ifge:
-//            <#code#>
-//        case .ifgt:
-//            <#code#>
-//        case .ifle:
-//            <#code#>
-//        case .if_icmpeq:
-//            <#code#>
-//        case .if_icmpne:
-//            <#code#>
-//        case .if_icmplt:
-//            <#code#>
-//        case .if_icmpge:
-//            <#code#>
-//        case .if_icmpgt:
-//            <#code#>
-//        case .if_icmple:
-//            <#code#>
-//        case .if_acmpeq:
-//            <#code#>
-//        case .if_acmpne:
-//            <#code#>
-//        case .goto:
-//            <#code#>
-//        case .jsr:
-//            <#code#>
-//        case .ret:
-//            <#code#>
-//        case .tableswitch:
-//            <#code#>
-//        case .lookupswitch:
-//            <#code#>
-//        case .ireturn:
-//            <#code#>
-//        case .lreturn:
-//            <#code#>
-//        case .freturn:
-//            <#code#>
-//        case .dreturn:
-//            <#code#>
-//        case .areturn:
-//            <#code#>
-//        case .return:
-//            <#code#>
-//        case .getstatic:
-//            <#code#>
-//        case .putstatic:
-//            <#code#>
-//        case .getfield:
-//            <#code#>
-//        case .putfield:
-//            <#code#>
-//        case .invokevirtual:
-//            <#code#>
-//        case .invokespecial:
-//            <#code#>
-//        case .invokestatic:
-//            <#code#>
-//        case .invokeinterface:
-//            <#code#>
-//        case .invokedynamic:
-//            <#code#>
-        case .new:
-            let hi: UInt8 = readFromData(data, cursor: &pc)
-            let lo: UInt8 = readFromData(data, cursor: &pc)
-            let index = UInt16(hi) << 8 | UInt16(lo)
-            guard let classRef = constantPool[index] else { return } // ClassConstant
-            Runtime.vm
-//            operandStack.append(classRef)
-//        case .newarray:
-//            <#code#>
-//        case .anewarray:
-//            <#code#>
-//        case .arraylength:
-//            <#code#>
-//        case .athrow:
-//            <#code#>
-//        case .checkcast:
-//            <#code#>
-//        case .instanceof:
-//            <#code#>
-//        case .monitorenter:
-//            <#code#>
-//        case .monitorexit:
-//            <#code#>
-//        case .wide:
-//            <#code#>
-//        case .multianewarray:
-//            <#code#>
-//        case .ifnull:
-//            <#code#>
-//        case .ifnonnull:
-//            <#code#>
-//        case .goto_w:
-//            <#code#>
-//        case .jsr_w:
-//            <#code#>
-//        case .breakpoint:
-//            <#code#>
-//        case .impdep1:
-//            <#code#>
-//        case .impdep2:
-//            <#code#>
-        default:
-            print("got unimplemented opcode: \(opcode)")
-            fatalError()
+
+    /// Creates a frame ready for execution.  `arguments` are placed into local
+    /// variable slots 0..N-1; remaining slots (up to `maxLocals`) are nil.
+    init(owningClass: Class, method: MethodInfo, arguments: [Value] = []) {
+        self.owningClass = owningClass
+        self.constantPool = owningClass.classFile.constantPool
+        self.method = method
+        let maxLocals = Int(
+            (method.attributes.first { $0 is CodeAttribute } as? CodeAttribute)?.maxLocals ?? 0
+        )
+        let count = max(maxLocals, arguments.count)
+        self.localVariables = (0..<count).map { i in
+            LocalVariable(i < arguments.count ? arguments[i] : nil)
         }
-        return
+    }
+
+    // MARK: - Operand stack helpers
+
+    func push(_ v: Value) { operandStack.append(v) }
+
+    @discardableResult
+    func pop() -> Value { operandStack.removeLast() }
+
+    func peek() -> Value { operandStack.last! }
+
+    // MARK: - Local variable helpers
+
+    private func pushLocal(_ idx: Int) {
+        guard idx < localVariables.count, let v = localVariables[idx].value else {
+            fatalError("Load from uninitialized local variable \(idx)")
+        }
+        push(v)
+    }
+
+    private func setLocal(_ idx: Int, _ value: Value) {
+        while localVariables.count <= idx { localVariables.append(LocalVariable()) }
+        localVariables[idx] = LocalVariable(value)
+    }
+
+    // MARK: - Branch helper
+
+    /// Reads the 2-byte signed branch offset from `code` at the current `pc`,
+    /// then — if `condition` is true — sets `pc` to `instructionStart + offset`.
+    /// Always returns `.continue`.
+    private func readBranchOffset(code: Data) -> Int {
+        let hi = Int(code[pc]); pc += 1
+        let lo = Int(code[pc]); pc += 1
+        return Int(Int16(bitPattern: UInt16(hi << 8 | lo)))
+    }
+
+    // MARK: - Instruction dispatch
+
+    func executeNextInstruction() -> ExecutionResult {
+        guard let codeAttr = codeAttribute else {
+            fatalError("Frame.executeNextInstruction: method '\(method.name.string)' has no Code attribute")
+        }
+        let code = codeAttr.code
+        let instructionStart = pc
+        let rawOpcode: UInt8 = code[pc]; pc += 1
+
+        guard let opcode = BytecodeInstruction.Opcode(rawValue: rawOpcode) else {
+            fatalError("Unknown opcode 0x\(String(rawOpcode, radix: 16)) at pc \(instructionStart) in \(method.name.string)")
+        }
+
+        switch opcode {
+
+        // ── nop ──────────────────────────────────────────────────────────────
+        case .nop:
+            return .continue
+
+        // ── integer constants ─────────────────────────────────────────────────
+        case .iconst_m1: push(.int(-1)); return .continue
+        case .iconst_0:  push(.int( 0)); return .continue
+        case .iconst_1:  push(.int( 1)); return .continue
+        case .iconst_2:  push(.int( 2)); return .continue
+        case .iconst_3:  push(.int( 3)); return .continue
+        case .iconst_4:  push(.int( 4)); return .continue
+        case .iconst_5:  push(.int( 5)); return .continue
+
+        case .bipush:
+            let byte = Int8(bitPattern: code[pc]); pc += 1
+            push(.int(Int32(byte)))
+            return .continue
+
+        case .sipush:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            push(.int(Int32(Int16(bitPattern: UInt16(hi << 8 | lo)))))
+            return .continue
+
+        // ── integer loads ─────────────────────────────────────────────────────
+        case .iload:
+            let idx = Int(code[pc]); pc += 1
+            pushLocal(idx)
+            return .continue
+
+        case .iload_0: pushLocal(0); return .continue
+        case .iload_1: pushLocal(1); return .continue
+        case .iload_2: pushLocal(2); return .continue
+        case .iload_3: pushLocal(3); return .continue
+
+        // ── integer stores ────────────────────────────────────────────────────
+        case .istore:
+            let idx = Int(code[pc]); pc += 1
+            setLocal(idx, pop())
+            return .continue
+
+        case .istore_0: setLocal(0, pop()); return .continue
+        case .istore_1: setLocal(1, pop()); return .continue
+        case .istore_2: setLocal(2, pop()); return .continue
+        case .istore_3: setLocal(3, pop()); return .continue
+
+        // ── integer arithmetic ────────────────────────────────────────────────
+        case .iadd:
+            let b = pop().asInt!, a = pop().asInt!
+            push(.int(a &+ b)); return .continue
+
+        case .isub:
+            let b = pop().asInt!, a = pop().asInt!
+            push(.int(a &- b)); return .continue
+
+        case .imul:
+            let b = pop().asInt!, a = pop().asInt!
+            push(.int(a &* b)); return .continue
+
+        case .idiv:
+            let b = pop().asInt!, a = pop().asInt!
+            guard b != 0 else { fatalError("idiv: ArithmeticException / by zero") }
+            push(.int(a / b)); return .continue
+
+        case .irem:
+            let b = pop().asInt!, a = pop().asInt!
+            guard b != 0 else { fatalError("irem: ArithmeticException / by zero") }
+            push(.int(a % b)); return .continue
+
+        case .ineg:
+            push(.int(0 &- pop().asInt!)); return .continue
+
+        // ── stack manipulation ────────────────────────────────────────────────
+        case .pop:
+            _ = pop(); return .continue
+
+        case .dup:
+            push(peek()); return .continue
+
+        // ── integer compare-and-branch (against 0) ────────────────────────────
+        case .ifeq:
+            let v = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if v == 0 { pc = instructionStart + offset }
+            return .continue
+
+        case .ifne:
+            let v = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if v != 0 { pc = instructionStart + offset }
+            return .continue
+
+        case .iflt:
+            let v = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if v < 0 { pc = instructionStart + offset }
+            return .continue
+
+        case .ifge:
+            let v = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if v >= 0 { pc = instructionStart + offset }
+            return .continue
+
+        case .ifgt:
+            let v = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if v > 0 { pc = instructionStart + offset }
+            return .continue
+
+        case .ifle:
+            let v = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if v <= 0 { pc = instructionStart + offset }
+            return .continue
+
+        // ── integer compare-and-branch (two operands) ─────────────────────────
+        case .if_icmpeq:
+            let b = pop().asInt!, a = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if a == b { pc = instructionStart + offset }
+            return .continue
+
+        case .if_icmpne:
+            let b = pop().asInt!, a = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if a != b { pc = instructionStart + offset }
+            return .continue
+
+        case .if_icmplt:
+            let b = pop().asInt!, a = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if a < b { pc = instructionStart + offset }
+            return .continue
+
+        case .if_icmpge:
+            let b = pop().asInt!, a = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if a >= b { pc = instructionStart + offset }
+            return .continue
+
+        case .if_icmpgt:
+            let b = pop().asInt!, a = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if a > b { pc = instructionStart + offset }
+            return .continue
+
+        case .if_icmple:
+            let b = pop().asInt!, a = pop().asInt!
+            let offset = readBranchOffset(code: code)
+            if a <= b { pc = instructionStart + offset }
+            return .continue
+
+        // ── unconditional branch ──────────────────────────────────────────────
+        case .goto:
+            let offset = readBranchOffset(code: code)
+            pc = instructionStart + offset
+            return .continue
+
+        // ── return ────────────────────────────────────────────────────────────
+        case .return:
+            return .returned(nil)
+
+        case .ireturn:
+            return .returned(pop())
+
+        // ── method invocation ─────────────────────────────────────────────────
+        case .invokestatic:
+            return executeInvokeStatic(code: code)
+
+        default:
+            fatalError("Unimplemented opcode \(opcode) at pc \(instructionStart) in \(method.name.string)")
+        }
+    }
+
+    // MARK: - invokestatic
+
+    private func executeInvokeStatic(code: Data) -> ExecutionResult {
+        let hi = Int(code[pc]); pc += 1
+        let lo = Int(code[pc]); pc += 1
+        let index = UInt16(hi << 8 | lo)
+
+        guard let methodRef = constantPool[index] as? MethodOrFieldRefConstant,
+              let classConst = constantPool[methodRef.classIndex] as? ClassOrModuleOrPackageConstant,
+              let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant,
+              let nameAndType = constantPool[methodRef.nameAndTypeIndex] as? NameAndTypeConstant,
+              let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant,
+              let descConst = constantPool[nameAndType.descriptorIndex] as? Utf8Constant
+        else {
+            fatalError("invokestatic: malformed constant pool entry at index \(index)")
+        }
+
+        let className  = classNameConst.string as String
+        let methodName = nameConst.string as String
+        let descriptor = descConst.string as String
+        let argCount   = parseArgumentCount(descriptor: descriptor)
+
+        // Pop arguments in reverse order so slot 0 holds the first argument.
+        var args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+
+        let classResult = Runtime.vm.findOrCreateClass(named: className)
+        guard case .success(let cls) = classResult, let cls else {
+            fatalError("invokestatic: class not found: \(className)")
+        }
+        guard let calleeMethod = cls.findMethod(named: methodName, descriptor: descriptor) else {
+            fatalError("invokestatic: method not found: \(methodName)\(descriptor) in \(className)")
+        }
+
+        let calleeFrame = Frame(owningClass: cls, method: calleeMethod, arguments: args)
+        return .invoke(frame: calleeFrame)
     }
 }
