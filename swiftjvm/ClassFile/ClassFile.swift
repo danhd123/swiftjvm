@@ -22,7 +22,8 @@ struct ClassFile {
         static var Synthetic    : AccessFlags { return AccessFlags(rawValue: 0x1000) }
         static var Annotation   : AccessFlags { return AccessFlags(rawValue: 0x2000) }
         static var Enum         : AccessFlags { return AccessFlags(rawValue: 0x4000) }
-
+        static var Module       : AccessFlags { return AccessFlags(rawValue: 0x8000) }
+        
     }
 
     let magic : UInt32
@@ -41,7 +42,12 @@ struct ClassFile {
     let methods : [MethodInfo]
     let attributesCount : UInt16
     let attributes : [AttributeInfo]
-    init(withData data:Data) throws {
+    // cached:
+    let className: String
+    let superclassName: String
+    let interfacesNames: [String]
+    let classFormatValid: Bool
+    init?(withData data:Data) throws {
         if (data.count < 10) {
             throw ClassFileError.invalidMagic(0)
         }
@@ -89,6 +95,8 @@ struct ClassFile {
             tempAttrs.append(try AttributeInfo.fromData(data, cursor: &cursor, constantPool: constantPool))
         }
         attributes = tempAttrs
+        // TODO: implement validation
+        classFormatValid = true
     }
 
     static func parseHeader(_ cursor:inout Int, data:Data) throws -> (UInt32, UInt16, UInt16, UInt16) {

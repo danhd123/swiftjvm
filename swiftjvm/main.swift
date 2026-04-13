@@ -22,6 +22,7 @@ for argument in CommandLine.arguments.dropFirst() {
     classFiles.append((url, data))
 }
 
+Runtime.vm
 var vm = VM(classpath: classpathURLs)
 
 for (url, data) in classFiles {
@@ -34,3 +35,4 @@ for (url, data) in classFiles {
 }
 
 vm.start()
+

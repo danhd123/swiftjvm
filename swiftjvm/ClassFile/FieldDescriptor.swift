@@ -10,7 +10,7 @@ import Foundation
 class FieldDescriptor {
     let size: UInt8
     init(constant: Utf8Constant) {
-        let strType = constant.string as String
+        let strType = constant.string
         switch strType {
         case "B":
             size = 1

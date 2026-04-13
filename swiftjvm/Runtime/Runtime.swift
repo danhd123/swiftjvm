@@ -1,5 +1,5 @@
 //
-//  Operand.swift
+//  Runtime.swift
 //  swiftjvm
 //
 //  Created by Daniel DeCovnick on 8/4/23.
@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol Operand : AnyObject {
-    
+class Runtime {
+    static var vm = VM()
 }

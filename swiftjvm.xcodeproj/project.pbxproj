@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BC86587C2AB82121008A0390 /* ClassPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC86587B2AB82121008A0390 /* ClassPath.swift */; };
+		BC86587E2AB82C7B008A0390 /* ClassPathEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC86587D2AB82C7B008A0390 /* ClassPathEntry.swift */; };
+		BC8658812AB82D17008A0390 /* FileSystemClassPathEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8658802AB82D17008A0390 /* FileSystemClassPathEntry.swift */; };
+		BC8658832AB82D28008A0390 /* JarFileClassPathEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8658822AB82D28008A0390 /* JarFileClassPathEntry.swift */; };
 		BC8820032A7218F900CD7BB2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8820022A7218F900CD7BB2 /* main.swift */; };
 		BC88200B2A721CE200CD7BB2 /* ClassFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC88200A2A721CE200CD7BB2 /* ClassFile.swift */; };
 		BC88200D2A721D1500CD7BB2 /* ClassConstant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC88200C2A721D1500CD7BB2 /* ClassConstant.swift */; };
@@ -22,7 +26,6 @@
 		BC8F66812A7A432700F58D35 /* Heap.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66802A7A432700F58D35 /* Heap.swift */; };
 		BC8F66832A7A434400F58D35 /* Object.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66822A7A434400F58D35 /* Object.swift */; };
 		BC8F66852A7A454700F58D35 /* LocalVariable.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66842A7A454700F58D35 /* LocalVariable.swift */; };
-		BC8F66872A7A459500F58D35 /* Operand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66862A7A459500F58D35 /* Operand.swift */; };
 		BC8F66892A7C5CBC00F58D35 /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66882A7C5CBC00F58D35 /* Field.swift */; };
 		BC8F668B2A7C705A00F58D35 /* FieldDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */; };
 		BC8F668D2A7C7B9600F58D35 /* Class.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668C2A7C7B9600F58D35 /* Class.swift */; };
@@ -31,6 +34,11 @@
 		BC8F66932A7C800100F58D35 /* ClassLoadError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66922A7C800100F58D35 /* ClassLoadError.swift */; };
 		BC8F66952A7C900000F58D35 /* ClassFileError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66942A7C900000F58D35 /* ClassFileError.swift */; };
 		BC9279D02F8D5B0F00923390 /* UInt8+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */; };
+		BC8F66942A7CE9FD00F58D35 /* BytecodeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66932A7CE9FD00F58D35 /* BytecodeInstruction.swift */; };
+		BC8F66962A7CF3CE00F58D35 /* Operand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66952A7CF3CE00F58D35 /* Operand.swift */; };
+		BC8F66982A7DA35600F58D35 /* Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66972A7DA35600F58D35 /* Runtime.swift */; };
+		BC8F669A2A7DA7BE00F58D35 /* BootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66992A7DA7BE00F58D35 /* BootstrapLoader.swift */; };
+		BC8F669C2A7DA80C00F58D35 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F669B2A7DA80C00F58D35 /* Loader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -46,6 +54,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BC86587B2AB82121008A0390 /* ClassPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassPath.swift; sourceTree = "<group>"; };
+		BC86587D2AB82C7B008A0390 /* ClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassPathEntry.swift; sourceTree = "<group>"; };
+		BC8658802AB82D17008A0390 /* FileSystemClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemClassPathEntry.swift; sourceTree = "<group>"; };
+		BC8658822AB82D28008A0390 /* JarFileClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JarFileClassPathEntry.swift; sourceTree = "<group>"; };
 		BC881FFF2A7218F800CD7BB2 /* swiftjvm */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = swiftjvm; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC8820022A7218F900CD7BB2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		BC88200A2A721CE200CD7BB2 /* ClassFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFile.swift; sourceTree = "<group>"; };
@@ -64,7 +76,6 @@
 		BC8F66802A7A432700F58D35 /* Heap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Heap.swift; sourceTree = "<group>"; };
 		BC8F66822A7A434400F58D35 /* Object.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Object.swift; sourceTree = "<group>"; };
 		BC8F66842A7A454700F58D35 /* LocalVariable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalVariable.swift; sourceTree = "<group>"; };
-		BC8F66862A7A459500F58D35 /* Operand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operand.swift; sourceTree = "<group>"; };
 		BC8F66882A7C5CBC00F58D35 /* Field.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Field.swift; sourceTree = "<group>"; };
 		BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldDescriptor.swift; sourceTree = "<group>"; };
 		BC8F668C2A7C7B9600F58D35 /* Class.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Class.swift; sourceTree = "<group>"; };
@@ -73,6 +84,11 @@
 		BC8F66922A7C800100F58D35 /* ClassLoadError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLoadError.swift; sourceTree = "<group>"; };
 		BC8F66942A7C900000F58D35 /* ClassFileError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFileError.swift; sourceTree = "<group>"; };
 		BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UInt8+Extensions.swift"; sourceTree = "<group>"; };
+		BC8F66932A7CE9FD00F58D35 /* BytecodeInstruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BytecodeInstruction.swift; sourceTree = "<group>"; };
+		BC8F66952A7CF3CE00F58D35 /* Operand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operand.swift; sourceTree = "<group>"; };
+		BC8F66972A7DA35600F58D35 /* Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Runtime.swift; sourceTree = "<group>"; };
+		BC8F66992A7DA7BE00F58D35 /* BootstrapLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BootstrapLoader.swift; sourceTree = "<group>"; };
+		BC8F669B2A7DA80C00F58D35 /* Loader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +102,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BC86587F2AB82CE7008A0390 /* ClassPath */ = {
+			isa = PBXGroup;
+			children = (
+				BC86587B2AB82121008A0390 /* ClassPath.swift */,
+				BC86587D2AB82C7B008A0390 /* ClassPathEntry.swift */,
+				BC8658802AB82D17008A0390 /* FileSystemClassPathEntry.swift */,
+				BC8658822AB82D28008A0390 /* JarFileClassPathEntry.swift */,
+			);
+			path = ClassPath;
+			sourceTree = "<group>";
+		};
 		BC881FF62A7218F800CD7BB2 = {
 			isa = PBXGroup;
 			children = (
@@ -143,18 +170,23 @@
 		BC8F66792A7A40FE00F58D35 /* Runtime */ = {
 			isa = PBXGroup;
 			children = (
+				BC86587F2AB82CE7008A0390 /* ClassPath */,
 				BC8F667A2A7A415100F58D35 /* VM.swift */,
 				BC8F667C2A7A419000F58D35 /* Thread.swift */,
 				BC8F667E2A7A41DE00F58D35 /* Frame.swift */,
 				BC8F66802A7A432700F58D35 /* Heap.swift */,
 				BC8F66822A7A434400F58D35 /* Object.swift */,
 				BC8F66842A7A454700F58D35 /* LocalVariable.swift */,
-				BC8F66862A7A459500F58D35 /* Operand.swift */,
 				BC8F66882A7C5CBC00F58D35 /* Field.swift */,
 				BC8F668C2A7C7B9600F58D35 /* Class.swift */,
 				BC8F668E2A7C7E8D00F58D35 /* Method.swift */,
 				BC8F66902A7C800000F58D35 /* ClassLoader.swift */,
 				BC8F66922A7C800100F58D35 /* ClassLoadError.swift */,
+				BC8F66932A7CE9FD00F58D35 /* BytecodeInstruction.swift */,
+				BC8F66952A7CF3CE00F58D35 /* Operand.swift */,
+				BC8F66972A7DA35600F58D35 /* Runtime.swift */,
+				BC8F66992A7DA7BE00F58D35 /* BootstrapLoader.swift */,
+				BC8F669B2A7DA80C00F58D35 /* Loader.swift */,
 			);
 			path = Runtime;
 			sourceTree = "<group>";
@@ -225,23 +257,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC8F66872A7A459500F58D35 /* Operand.swift in Sources */,
 				BC8F667F2A7A41DE00F58D35 /* Frame.swift in Sources */,
 				BC8820152A721DC800CD7BB2 /* MethodInfo.swift in Sources */,
 				BC8F667B2A7A415100F58D35 /* VM.swift in Sources */,
+				BC8F66942A7CE9FD00F58D35 /* BytecodeInstruction.swift in Sources */,
+				BC8658832AB82D28008A0390 /* JarFileClassPathEntry.swift in Sources */,
 				BC8F668F2A7C7E8D00F58D35 /* Method.swift in Sources */,
 				BC8820192A7357A800CD7BB2 /* TypeAnnotation.swift in Sources */,
+				BC8F66982A7DA35600F58D35 /* Runtime.swift in Sources */,
 				BC88200D2A721D1500CD7BB2 /* ClassConstant.swift in Sources */,
 				BC8820112A721D7500CD7BB2 /* AttributeInfo.swift in Sources */,
 				BC8F668D2A7C7B9600F58D35 /* Class.swift in Sources */,
 				BC88200B2A721CE200CD7BB2 /* ClassFile.swift in Sources */,
+				BC86587C2AB82121008A0390 /* ClassPath.swift in Sources */,
 				BC8F667D2A7A419000F58D35 /* Thread.swift in Sources */,
 				BC88200F2A721D4E00CD7BB2 /* FieldInfo.swift in Sources */,
+				BC8658812AB82D17008A0390 /* FileSystemClassPathEntry.swift in Sources */,
+				BC86587E2AB82C7B008A0390 /* ClassPathEntry.swift in Sources */,
+				BC8F66962A7CF3CE00F58D35 /* Operand.swift in Sources */,
+				BC8F669C2A7DA80C00F58D35 /* Loader.swift in Sources */,
 				BC8F66832A7A434400F58D35 /* Object.swift in Sources */,
 				BC9279D02F8D5B0F00923390 /* UInt8+Extensions.swift in Sources */,
 				BC8820132A721D9C00CD7BB2 /* Annotation.swift in Sources */,
 				BC8820032A7218F900CD7BB2 /* main.swift in Sources */,
 				BC8F66892A7C5CBC00F58D35 /* Field.swift in Sources */,
+				BC8F669A2A7DA7BE00F58D35 /* BootstrapLoader.swift in Sources */,
 				BC8820172A721E5C00CD7BB2 /* StackMapTableAttribute.swift in Sources */,
 				BC8F66812A7A432700F58D35 /* Heap.swift in Sources */,
 				BC8F668B2A7C705A00F58D35 /* FieldDescriptor.swift in Sources */,

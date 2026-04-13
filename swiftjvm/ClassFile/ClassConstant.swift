@@ -16,6 +16,8 @@ func readFromData<T: BitwiseCopyable>(_ data: Data, cursor:inout Int) -> T {
     return value
 }
 
+
+
 typealias ConstantPool = [UInt16: ClassConstant]
 
 class ClassConstant: NSObject {
