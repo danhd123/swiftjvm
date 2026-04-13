@@ -28,10 +28,14 @@ class ClassLoader {
             let url = directory.appendingPathComponent(name + ".class")
             guard let data = try? Data(contentsOf: url) else { continue }
             do {
-                let classFile = try ClassFile(withData: data)
+                guard let classFile = try ClassFile(withData: data) else {
+                    throw ClassLoadError.invalidClassFile(name)
+                }
                 let cls = Class(classFile: classFile)
                 loadedClasses[name] = cls
                 return cls
+            } catch let e as ClassLoadError {
+                throw e
             } catch {
                 throw ClassLoadError.invalidClassFile(name)
             }

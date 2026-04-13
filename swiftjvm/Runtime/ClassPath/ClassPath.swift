@@ -20,6 +20,8 @@ class ClassPath {
     }
 
     var entries : [Entry]
-    
-    
+
+    init(entries: [Entry] = []) {
+        self.entries = entries
+    }
 }

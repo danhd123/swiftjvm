@@ -12,11 +12,10 @@ class BootstrapLoader : Loader {
 //        return true
 //    }
     
-    func loadClassNamed(_ name: String,) -> Class {
-        let loadableClasses = Runtime.vm.methodArea
-        for loadableClass in loadableClasses {
-            let className = loadableClass.className
-            guard name == className else { continue }
+    func loadClassNamed(_ name: String) -> Class {
+        if let cls = Runtime.vm.classLoader.loadedClasses[name] {
+            return cls
         }
+        fatalError("Class not found: \(name)")
     }
 }

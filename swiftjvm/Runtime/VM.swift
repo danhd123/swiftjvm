@@ -10,8 +10,18 @@ import Foundation
 struct VM {
     var threads: [Thread] = []
     var classLoader: ClassLoader
+    var classes: [Class: any Loader] = [:]
+    var bootstrapLoader: BootstrapLoader = BootstrapLoader()
     var mainMethod: MethodInfo? = nil
     var mainClass: Class?
+
+    enum Error: Swift.Error {
+        case classNotFound(String)
+        case linkageError(String)
+        case classFormatError(String)
+        case unsupportedClassVersionError(UInt16)
+        case noClassDefFound(String)
+    }
 
     init(classpath: [URL]) {
         self.classLoader = ClassLoader(classpath: classpath)
@@ -21,24 +31,6 @@ struct VM {
         let cls = classLoader.preload(classFile)
         if let main = cls.findMethod(named: "main", descriptor: "([Ljava/lang/String;)V") {
             if main.accessFlags.rawValue & MethodInfo.AccessFlags.Static.rawValue != 0 {
-/*
-    var mainClass: ClassFile?
-    var classes: [Class:any Loader] = [:]
-    let bootstrapLoader = BootstrapLoader()
-    
-    enum Error: Swift.Error {
-        case ClassNotFound(String)
-        case LinkageError(String)
-        case ClassFormatError(String)
-        case UnsupportedClassVersionError(UInt16)
-        case NoClassDefFound(String)
-    }
-    
-    mutating func loadClassFile(_ classFile: ClassFile) -> [Class: any Loader].Element {
-        methodArea.append(classFile)
-        for method in classFile.methods {
-            if method.accessFlags.rawValue & MethodInfo.AccessFlags.Static.rawValue != 0 && method.name == "main" && method.descriptor == "([Ljava/lang/String;)V" {
-*/
                 if mainMethod != nil {
                     fatalError("Can't have two main methods")
                 }
@@ -46,44 +38,45 @@ struct VM {
                 mainClass = cls
             }
         }
-        let newClass = bootstrapLoader.loadClassNamed(classFile.className)
-        return [Class: any Loader].Element(newClass, bootstrapLoader)
     }
-    
-    mutating func findOrCreateClass(named name: String) -> Result<Class?,Error> {
+
+    mutating func findOrCreateClass(named name: String) -> Result<Class?, VM.Error> {
         if let loadedClass = classes.keys.first(where: { $0.name == name }) {
             return .success(loadedClass)
         } else if name.hasPrefix("[") {
-            // TODO create array class dynamically
-        } else if let parsedClass = methodArea.first(where: { classFile in
-            guard let classFileConstant = classFile.constantPool[classFile.thisClassIndex] as? ClassOrModuleOrPackageConstant else { return false }
-            guard let nameConstant = classFile.constantPool[classFileConstant.nameIndex] as? Utf8Constant else { return false}
-            if nameConstant.string == name {
-                let element = loadClassFile(classFile)
-                classes[element.key] = element.value
+            // TODO: create array class dynamically
+            return .success(nil)
+        } else {
+            do {
+                let cls = try classLoader.load(name: name)
+                classes[cls] = bootstrapLoader
+                return .success(cls)
+            } catch ClassLoadError.classNotFound(let n) {
+                return .failure(.classNotFound(n))
+            } catch ClassLoadError.invalidClassFile(let n) {
+                return .failure(.classFormatError(n))
+            } catch {
+                return .failure(.classNotFound(name))
             }
-        }){
-            
         }
-        
     }
-    
-    mutating func createClass(_ name: String, classFile: ClassFile, loader: any Loader) -> Result<Class, Error> {
+
+    mutating func createClass(_ name: String, classFile: ClassFile, loader: any Loader) -> Result<Class, VM.Error> {
         if classes.keys.map({ $0.name }).contains(where: { $0 == name }) {
-            return .failure(.LinkageError(name))
+            return .failure(.linkageError(name))
         }
         if !classFile.classFormatValid {
-            return .failure(.ClassFormatError(classFile.className))
+            return .failure(.classFormatError(classFile.className))
         }
         if classFile.majorVersion < 45 || classFile.majorVersion > 64 {
-            return .failure(.UnsupportedClassVersionError(classFile.majorVersion))
+            return .failure(.unsupportedClassVersionError(classFile.majorVersion))
         }
-        if classFile.className != name  || classFile.accessFlags.rawValue & ClassFile.AccessFlags.Module.rawValue != 0 {
-            return .failure(.NoClassDefFound(classFile.className))
+        if classFile.className != name || classFile.accessFlags.rawValue & ClassFile.AccessFlags.Module.rawValue != 0 {
+            return .failure(.noClassDefFound(classFile.className))
         }
-        
+        fatalError("createClass: not yet implemented")
     }
-    
+
     mutating func start() -> Never {
         guard let mainMethod, let mainClass else {
             fatalError("No main method found")

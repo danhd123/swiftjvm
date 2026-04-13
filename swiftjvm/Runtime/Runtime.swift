@@ -8,5 +8,5 @@
 import Foundation
 
 class Runtime {
-    static var vm = VM()
+    static var vm = VM(classpath: [])
 }

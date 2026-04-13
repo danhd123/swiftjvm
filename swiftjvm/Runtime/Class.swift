@@ -8,19 +8,25 @@
 import Foundation
 
 class Class {
+    let classFile: ClassFile
     let name: String
     let superclass: Class?
     let interfaces: [Class]
     let sourceFile: String?
     var fields: [Field] = []
     var methods: [MethodInfo] = [] // not actually sure this is necessary.
-    
+
     let firstFieldIndex: UInt16
     let numTotalFields: UInt16
     var clinitNeedsToBeRun: Bool = false
     var clinit: MethodInfo? // this is definitely necessary
-    
+
     init(classFile: ClassFile) {
+        self.classFile = classFile
+        interfaces = []
+        sourceFile = nil
+        firstFieldIndex = 0
+        numTotalFields = 0
         methods = classFile.methods
         let needsStaticCheck = classFile.majorVersion >= 51
         let needsNoArgsCheck = classFile.majorVersion >= 53
@@ -40,6 +46,13 @@ class Class {
         case .failure(let error):
             print("Failed to find or create superclass named: \(classFile.superclassName), \(error)")
             superclass = nil
+        }
+    }
+
+    func findMethod(named name: String, descriptor: String) -> MethodInfo? {
+        methods.first {
+            $0.name.string as String == name &&
+            $0.descriptor.string as String == descriptor
         }
     }
 }

@@ -27,8 +27,9 @@ var vm = VM(classpath: classpathURLs)
 
 for (url, data) in classFiles {
     do {
-        let classFile = try ClassFile(withData: data)
-        vm.loadClass(classFile)
+        if let classFile = try ClassFile(withData: data) {
+            vm.loadClass(classFile)
+        }
     } catch let e as ClassFileError {
         fputs("warning: \(url.lastPathComponent): \(e)\n", stderr)
     }

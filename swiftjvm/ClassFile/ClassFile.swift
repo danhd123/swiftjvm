@@ -97,6 +97,23 @@ struct ClassFile {
         attributes = tempAttrs
         // TODO: implement validation
         classFormatValid = true
+
+        // Use a local alias so closures below don't implicitly capture `self`
+        // before all stored properties are initialized.
+        let cp = constantPool
+
+        let thisClassConst = cp[thisClassIndex] as? ClassOrModuleOrPackageConstant
+        className = (thisClassConst.flatMap { cp[$0.nameIndex] as? Utf8Constant })?.string as String? ?? ""
+
+        let superClassConst = cp[superClassIndex] as? ClassOrModuleOrPackageConstant
+        superclassName = (superClassConst.flatMap { cp[$0.nameIndex] as? Utf8Constant })?.string as String? ?? ""
+
+        interfacesNames = interfaceIndicies.compactMap { idx in
+            guard let classConst = cp[idx] as? ClassOrModuleOrPackageConstant,
+                  let nameConst = cp[classConst.nameIndex] as? Utf8Constant
+            else { return nil }
+            return nameConst.string as String
+        }
     }
 
     static func parseHeader(_ cursor:inout Int, data:Data) throws -> (UInt32, UInt16, UInt16, UInt16) {
