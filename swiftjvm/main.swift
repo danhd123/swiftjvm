@@ -24,9 +24,12 @@ for argument in CommandLine.arguments.dropFirst() {
 
 var vm = VM(classpath: classpathURLs)
 
-for (_, data) in classFiles {
-    if let classFile = ClassFile(withData: data) {
+for (url, data) in classFiles {
+    do {
+        let classFile = try ClassFile(withData: data)
         vm.loadClass(classFile)
+    } catch let e as ClassFileError {
+        fputs("warning: \(url.lastPathComponent): \(e)\n", stderr)
     }
 }
 

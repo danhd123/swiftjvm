@@ -8,9 +8,9 @@
 import Foundation
 
 class StackMapTableAttribute: AttributeInfo {
-    
+
     class StackMapFrame: NSObject {
-        
+
         enum Tag {
             case same(UInt8)
             case sameLocals1StackItem(UInt8)
@@ -58,7 +58,7 @@ class StackMapTableAttribute: AttributeInfo {
                 }
             }
         }
-        
+
         enum VerificationTypeInfo {
             case top
             case integer
@@ -90,66 +90,86 @@ class StackMapTableAttribute: AttributeInfo {
                     return nil
                 }
             }
-            
+
         }
-        
+
         let frameType : Tag
         init(frameType:Tag) {
             self.frameType = frameType
             super.init()
         }
-        
-        static func readVerificationTypeInfoFromData(_ data:Data, cursor:inout Int) -> VerificationTypeInfo? {
+
+        static func readVerificationTypeInfoFromData(_ data:Data, cursor:inout Int) throws -> VerificationTypeInfo {
             let temp1 : UInt8 = readFromData(data, cursor: &cursor)
+            let result: VerificationTypeInfo?
             if temp1 == 6 || temp1 == 7 {
-                return VerificationTypeInfo.fromRaw(temp1, poolIndexOrOffset: NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))
+                result = VerificationTypeInfo.fromRaw(temp1, poolIndexOrOffset: NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))
             }
             else {
-                return VerificationTypeInfo.fromRaw(temp1)
+                result = VerificationTypeInfo.fromRaw(temp1)
             }
-            
+            guard let vti = result else {
+                throw ClassFileError.unknownEnumValue("VerificationTypeInfo", temp1)
+            }
+            return vti
         }
-        
-        static func fromData(_ data:Data, cursor:inout Int) -> StackMapFrame? {
-            let tag : StackMapFrame.Tag = StackMapFrame.Tag.fromRaw(readFromData(data, cursor: &cursor))!
+
+        static func fromData(_ data:Data, cursor:inout Int) throws -> StackMapFrame {
+            let rawTag: UInt8 = readFromData(data, cursor: &cursor)
+            guard let tag = StackMapFrame.Tag.fromRaw(rawTag) else {
+                throw ClassFileError.unknownEnumValue("StackMapFrame.Tag", rawTag)
+            }
             switch tag {
             case .same:
                 return SameFrame(frameType: tag)
             case .sameLocals1StackItem:
-                return SameLocals1StackItemFrame(frameType: tag, data: data, cursor: &cursor)
-            default:
-                return nil
+                return try SameLocals1StackItemFrame(frameType: tag, data: data, cursor: &cursor)
+            case .sameLocals1StackItemExtended:
+                return try SameLocals1StackItemFrameExtended(frameType: tag, data: data, cursor: &cursor)
+            case .chop:
+                return ChopFrame(frameType: tag, data: data, cursor: &cursor)
+            case .sameFrameExtended:
+                return SameFrameExtended(frameType: tag, data: data, cursor: &cursor)
+            case .append:
+                return try AppendFrame(frameType: tag, data: data, cursor: &cursor)
+            case .fullFrame:
+                return try FullFrame(frameType: tag, data: data, cursor: &cursor)
             }
         }
     }
-    
+
     class SameFrame: StackMapFrame {
     }
-    
+
     class SameLocals1StackItemFrame: StackMapFrame {
         let stackItem : VerificationTypeInfo
-        init(frameType: Tag, data:Data, cursor:inout Int) {
+        init(frameType: Tag, data:Data, cursor:inout Int) throws {
             let temp1 : UInt8 = readFromData(data, cursor: &cursor)
+            let result: VerificationTypeInfo?
             if temp1 == 6 || temp1 == 7 {
-                stackItem = VerificationTypeInfo.fromRaw(temp1, poolIndexOrOffset: NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))!
+                result = VerificationTypeInfo.fromRaw(temp1, poolIndexOrOffset: NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))
             }
             else {
-                stackItem = VerificationTypeInfo.fromRaw(temp1)!
+                result = VerificationTypeInfo.fromRaw(temp1)
             }
+            guard let vti = result else {
+                throw ClassFileError.unknownEnumValue("VerificationTypeInfo", temp1)
+            }
+            stackItem = vti
             super.init(frameType: frameType)
         }
     }
-    
+
     class SameLocals1StackItemFrameExtended: StackMapFrame {
         let offsetDelta : UInt16
         let stackItem : VerificationTypeInfo
-        init(frameType: Tag, data:Data, cursor:inout Int) {
+        init(frameType: Tag, data:Data, cursor:inout Int) throws {
             offsetDelta = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
-            stackItem = StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor)!
+            stackItem = try StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor)
             super.init(frameType: frameType)
         }
     }
-    
+
     class ChopFrame: StackMapFrame {
         let offsetDelta : UInt16
         init(frameType: Tag, data:Data, cursor:inout Int) {
@@ -157,7 +177,7 @@ class StackMapTableAttribute: AttributeInfo {
             super.init(frameType: frameType)
         }
     }
-    
+
     class SameFrameExtended: StackMapFrame {
         let offsetDelta : UInt16
         init(frameType: Tag, data:Data, cursor:inout Int) {
@@ -165,54 +185,54 @@ class StackMapTableAttribute: AttributeInfo {
             super.init(frameType: frameType)
         }
     }
-    
+
     class AppendFrame: StackMapFrame {
         let offsetDelta : UInt16
         let locals : [VerificationTypeInfo]
-        init(frameType: Tag, data:Data, cursor:inout Int) {
+        init(frameType: Tag, data:Data, cursor:inout Int) throws {
             offsetDelta = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
             let k = frameType.value() - 251
             var tempLocals = [VerificationTypeInfo]()
             for _ in 0..<k {
-                tempLocals.append(StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor)!)
+                tempLocals.append(try StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor))
             }
             locals = tempLocals
             super.init(frameType: frameType)
         }
     }
-    
+
     class FullFrame: StackMapFrame {
         let offsetDelta : UInt16
         let numberOfLocals : UInt16
         let locals : [VerificationTypeInfo]
         let numberOfStackItems : UInt16
         let stack : [VerificationTypeInfo]
-        init(frameType: Tag, data:Data, cursor:inout Int) {
+        init(frameType: Tag, data:Data, cursor:inout Int) throws {
             offsetDelta = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
             numberOfLocals = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
             var tempLocals = [VerificationTypeInfo]()
             for _ in 0..<numberOfLocals {
-                tempLocals.append(StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor)!)
+                tempLocals.append(try StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor))
             }
             locals = tempLocals
             numberOfStackItems = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
             var tempStack = [VerificationTypeInfo]()
             for _ in 0..<numberOfStackItems {
-                tempStack.append(StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor)!)
+                tempStack.append(try StackMapFrame.readVerificationTypeInfoFromData(data, cursor: &cursor))
             }
             stack = tempStack
             super.init(frameType: frameType)
         }
-        
+
     }
-    
+
     let numberOfEntries : UInt16
     let entries : [StackMapFrame]
-    init(header:Header, data:Data, cursor:inout Int) {
+    init(header:Header, data:Data, cursor:inout Int) throws {
         numberOfEntries = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
         var localEntries = [StackMapFrame]()
         for _ in 0..<numberOfEntries {
-            localEntries.append(StackMapFrame.fromData(data, cursor:&cursor)!)
+            localEntries.append(try StackMapFrame.fromData(data, cursor:&cursor))
         }
         entries = localEntries
         super.init(header: header)

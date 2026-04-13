@@ -8,11 +8,11 @@
 import Foundation
 
 struct MethodInfo {
-    
+
     struct AccessFlags: OptionSet {
         let rawValue: UInt16
         init(rawValue: UInt16) { self.rawValue = rawValue }
-        
+
         static var None         : AccessFlags { return AccessFlags(rawValue: 0x0000) }
         static var Public       : AccessFlags { return AccessFlags(rawValue: 0x0001) }
         static var Private      : AccessFlags { return AccessFlags(rawValue: 0x0002) }
@@ -25,7 +25,7 @@ struct MethodInfo {
         static var Abstract     : AccessFlags { return AccessFlags(rawValue: 0x0400) }
         static var Strict       : AccessFlags { return AccessFlags(rawValue: 0x0800) }
         static var Synthetic    : AccessFlags { return AccessFlags(rawValue: 0x1000) }
-        
+
     }
 
     let accessFlags : AccessFlags
@@ -36,18 +36,21 @@ struct MethodInfo {
     //cached
     let name : Utf8Constant
     let descriptor : Utf8Constant
-    init(data:Data, cursor:inout Int, constantPool:ConstantPool) {
+    init(data:Data, cursor:inout Int, constantPool:ConstantPool) throws {
         accessFlags = AccessFlags(rawValue: NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))
         nameIndex = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
         descriptorIndex = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
         attributesCount = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
         var tempAttributes = [AttributeInfo]()
         for _ in 0..<attributesCount {
-            tempAttributes.append(AttributeInfo.fromData(data, cursor: &cursor, constantPool: constantPool))
+            tempAttributes.append(try AttributeInfo.fromData(data, cursor: &cursor, constantPool: constantPool))
         }
         attributes = tempAttributes
-        
-        name = constantPool[nameIndex]! as! Utf8Constant
-        descriptor = constantPool[descriptorIndex]! as! Utf8Constant
+
+        guard let tempName = constantPool[nameIndex] as? Utf8Constant,
+              let tempDescriptor = constantPool[descriptorIndex] as? Utf8Constant
+        else { throw ClassFileError.invalidConstantPoolType(nameIndex) }
+        name = tempName
+        descriptor = tempDescriptor
     }
 }

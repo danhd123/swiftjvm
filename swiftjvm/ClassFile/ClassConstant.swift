@@ -7,17 +7,19 @@
 
 import Foundation
 
-func readFromData<T: UnsignedInteger>(_ data: Data, cursor:inout Int) -> T {
-    var temp : T = 0
-    (data as NSData).getBytes(&temp, range: NSMakeRange(cursor, MemoryLayout<T>.size))
-    cursor += MemoryLayout<T>.size
-    return temp
+func readFromData<T: BitwiseCopyable>(_ data: Data, cursor:inout Int) -> T {
+    let size = MemoryLayout<T>.size
+    let value = data.withUnsafeBytes { bytes in
+        bytes.loadUnaligned(fromByteOffset: cursor, as: T.self)
+    }
+    cursor += size
+    return value
 }
 
 typealias ConstantPool = [UInt16: ClassConstant]
 
 class ClassConstant: NSObject {
-    
+
     enum Tag : UInt8 {
         case utf8               = 1
         case integer            = 3
@@ -36,13 +38,16 @@ class ClassConstant: NSObject {
         case module             = 19
         case package            = 20
     }
-    
+
     let tag : Tag
     init(withTag tag:Tag) {
         self.tag = tag
         super.init()
     }
-    static func withTag(_ tag : Tag, cursor : inout Int, data : Data) -> ClassConstant {
+    static func withTag(_ tagVal: UInt8, cursor: inout Int, data: Data) throws -> ClassConstant {
+        guard let tag = Tag(rawValue: tagVal) else {
+            throw ClassFileError.unknownConstantTag(tagVal)
+        }
         switch tag {
         case .classRef, .module, .package:
             return ClassOrModuleOrPackageConstant(tag: tag, cursor: &cursor, data: data)
@@ -61,11 +66,11 @@ class ClassConstant: NSObject {
         case .nameAndType:
             return NameAndTypeConstant(tag: tag, cursor: &cursor, data: data)
         case .utf8:
-            return Utf8Constant(tag: tag, cursor: &cursor, data: data)
+            return try Utf8Constant(tag: tag, cursor: &cursor, data: data)
         case .methodHandle:
-            return MethodHandleConstant(tag: tag, cursor: &cursor, data: data)
+            return try MethodHandleConstant(tag: tag, cursor: &cursor, data: data)
         case .methodType:
-            return MethodHandleConstant(tag: tag, cursor: &cursor, data: data)
+            return MethodTypeConstant(tag: tag, cursor: &cursor, data: data)
         case .invokeDynamic:
             return InvokeDynamicConstant(tag: tag, cursor: &cursor, data: data)
         }
@@ -150,10 +155,12 @@ class NameAndTypeConstant : ClassConstant {
 class Utf8Constant : ClassConstant {
     let length : UInt16
     let string : NSString
-    init(tag:Tag, cursor:inout Int, data:Data) {
+    init(tag:Tag, cursor:inout Int, data:Data) throws {
         length = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
-        string = NSString(data: (data as NSData).subdata(with: NSMakeRange(cursor, Int(length))), encoding: String.Encoding.utf8.rawValue)!
-        // that's a little dangerous...
+        guard let tempString = NSString(data: (data as NSData).subdata(with: NSMakeRange(cursor, Int(length))), encoding: String.Encoding.utf8.rawValue) else {
+            throw ClassFileError.invalidUtf8
+        }
+        string = tempString
         cursor += Int(length)
         super.init(withTag: tag)
     }
@@ -161,7 +168,7 @@ class Utf8Constant : ClassConstant {
 
 
 class MethodHandleConstant: ClassConstant {
-    
+
     enum Kind : UInt8 {
         case getField = 1
         case getStatic
@@ -173,11 +180,15 @@ class MethodHandleConstant: ClassConstant {
         case newInvokeSpecial
         case invokeInterface
     }
-    
+
     let referenceKind : Kind
     let referenceIndex : UInt16
-    init(tag:Tag, cursor:inout Int, data:Data) {
-        referenceKind = Kind(rawValue: readFromData(data, cursor: &cursor))!
+    init(tag:Tag, cursor:inout Int, data:Data) throws {
+        let rawValue: UInt8 = readFromData(data, cursor: &cursor)
+        guard let kind = Kind(rawValue: rawValue) else {
+            throw ClassFileError.unknownEnumValue("MethodHandle.Kind", rawValue)
+        }
+        referenceKind = kind
         referenceIndex = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
         super.init(withTag: tag)
     }

@@ -26,11 +26,15 @@ class ClassLoader {
         if let cached = loadedClasses[name] { return cached }
         for directory in classpath {
             let url = directory.appendingPathComponent(name + ".class")
-            guard let data = try? Data(contentsOf: url),
-                  let classFile = ClassFile(withData: data) else { continue }
-            let cls = Class(classFile: classFile)
-            loadedClasses[name] = cls
-            return cls
+            guard let data = try? Data(contentsOf: url) else { continue }
+            do {
+                let classFile = try ClassFile(withData: data)
+                let cls = Class(classFile: classFile)
+                loadedClasses[name] = cls
+                return cls
+            } catch {
+                throw ClassLoadError.invalidClassFile(name)
+            }
         }
         throw ClassLoadError.classNotFound(name)
     }
