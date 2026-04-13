@@ -27,6 +27,8 @@
 		BC8F668B2A7C705A00F58D35 /* FieldDescriptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */; };
 		BC8F668D2A7C7B9600F58D35 /* Class.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668C2A7C7B9600F58D35 /* Class.swift */; };
 		BC8F668F2A7C7E8D00F58D35 /* Method.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668E2A7C7E8D00F58D35 /* Method.swift */; };
+		BC8F66912A7C800000F58D35 /* ClassLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66902A7C800000F58D35 /* ClassLoader.swift */; };
+		BC8F66932A7C800100F58D35 /* ClassLoadError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66922A7C800100F58D35 /* ClassLoadError.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -65,6 +67,8 @@
 		BC8F668A2A7C705A00F58D35 /* FieldDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldDescriptor.swift; sourceTree = "<group>"; };
 		BC8F668C2A7C7B9600F58D35 /* Class.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Class.swift; sourceTree = "<group>"; };
 		BC8F668E2A7C7E8D00F58D35 /* Method.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Method.swift; sourceTree = "<group>"; };
+		BC8F66902A7C800000F58D35 /* ClassLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLoader.swift; sourceTree = "<group>"; };
+		BC8F66922A7C800100F58D35 /* ClassLoadError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLoadError.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -143,6 +147,8 @@
 				BC8F66882A7C5CBC00F58D35 /* Field.swift */,
 				BC8F668C2A7C7B9600F58D35 /* Class.swift */,
 				BC8F668E2A7C7E8D00F58D35 /* Method.swift */,
+				BC8F66902A7C800000F58D35 /* ClassLoader.swift */,
+				BC8F66922A7C800100F58D35 /* ClassLoadError.swift */,
 			);
 			path = Runtime;
 			sourceTree = "<group>";
@@ -225,6 +231,8 @@
 				BC8F66812A7A432700F58D35 /* Heap.swift in Sources */,
 				BC8F668B2A7C705A00F58D35 /* FieldDescriptor.swift in Sources */,
 				BC8F66852A7A454700F58D35 /* LocalVariable.swift in Sources */,
+				BC8F66912A7C800000F58D35 /* ClassLoader.swift in Sources */,
+				BC8F66932A7C800100F58D35 /* ClassLoadError.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

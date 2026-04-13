@@ -7,20 +7,27 @@
 
 import Foundation
 
-var vm = VM()
+// Collect classpath from the directories containing each .class file argument
+var classpathURLs: [URL] = []
+var classFiles: [(URL, Data)] = []
 
-var mainFound = false
-for argument in CommandLine.arguments {
-    let url = URL.init(filePath: argument)
-    if url.lastPathComponent == "swiftjvm" {
-        continue
+for argument in CommandLine.arguments.dropFirst() {
+    let url = URL(filePath: argument)
+    guard url.pathExtension == "class",
+          let data = try? Data(contentsOf: url) else { continue }
+    let dir = url.deletingLastPathComponent()
+    if !classpathURLs.contains(dir) {
+        classpathURLs.append(dir)
     }
-    let data = try! Data(contentsOf: url)
-    let classFile = ClassFile(withData: data)
-    if let classFile {
-        print("\(classFile)")
+    classFiles.append((url, data))
+}
+
+var vm = VM(classpath: classpathURLs)
+
+for (_, data) in classFiles {
+    if let classFile = ClassFile(withData: data) {
         vm.loadClass(classFile)
     }
-    vm.start()
-    
 }
+
+vm.start()
