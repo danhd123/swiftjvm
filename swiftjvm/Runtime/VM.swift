@@ -9,29 +9,33 @@ import Foundation
 
 struct VM {
     var threads: [Thread] = []
-    var methodArea: [ClassFile] = []
+    var classLoader: ClassLoader
     var mainMethod: MethodInfo? = nil
-    var mainClass: ClassFile?
-    
+    var mainClass: Class?
+
+    init(classpath: [URL]) {
+        self.classLoader = ClassLoader(classpath: classpath)
+    }
+
     mutating func loadClass(_ classFile: ClassFile) {
-        methodArea.append(classFile)
-        for method in classFile.methods {
-            if method.accessFlags.rawValue & MethodInfo.AccessFlags.Static.rawValue != 0 && method.name.string as String == "main" && method.descriptor.string as String == "([Ljava/lang/String;)V" {
+        let cls = classLoader.preload(classFile)
+        if let main = cls.findMethod(named: "main", descriptor: "([Ljava/lang/String;)V") {
+            if main.accessFlags.rawValue & MethodInfo.AccessFlags.Static.rawValue != 0 {
                 if mainMethod != nil {
                     fatalError("Can't have two main methods")
                 }
-                mainMethod = method
-                mainClass = classFile
+                mainMethod = main
+                mainClass = cls
             }
         }
     }
-    
+
     func start() -> Never {
         guard let mainMethod, let mainClass else {
-            fatalError("No main method fouund")
+            fatalError("No main method found")
         }
         var mainThread = Thread()
-        let mainFrame = Frame(classFile: mainClass, constantPool: mainClass.constantPool, method: mainMethod)
+        let mainFrame = Frame(classFile: mainClass.classFile, constantPool: mainClass.classFile.constantPool, method: mainMethod)
         mainThread.stackFrames.append(mainFrame)
         mainFrame.execute()
         exit(0)

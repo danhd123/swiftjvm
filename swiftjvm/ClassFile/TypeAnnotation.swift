@@ -19,7 +19,7 @@ struct TypeAnnotation {
         case receiverTypeOfMethodOrConstructor = 0x15
         case formalParameterOfMethodConstructorOrLambda = 0x16
         case throwsClauseOfMethodOrConstructor = 0x17
-        
+
         case localVariable = 0x40
         case resourceVariable = 0x41
         case exceptionParameter = 0x42
@@ -33,7 +33,7 @@ struct TypeAnnotation {
         case argumentForGenericConstructorInMethodReferenceExpressionUsingNew = 0x4A
         case argumentForGenericMethodInMethodReferencExpressioneUsingIdentifier = 0x4B
     }
-    
+
     enum TargetInfo {
         case typeParameterTarget(UInt8)
         case supertypeTarget(UInt16)
@@ -54,11 +54,11 @@ struct TypeAnnotation {
     struct TypePath {
         let pathLength: UInt8
         let path: [PathElement]
-        
+
         struct PathElement {
             let typePathKind: TypePathKind
             let typeArgumentIndex: UInt8
-            
+
             enum TypePathKind: UInt8 {
                 case deeperInArray = 0
                 case deeperInNested = 1
@@ -66,11 +66,15 @@ struct TypeAnnotation {
                 case typeArgument = 3
             }
         }
-        init(data: Data, cursor: inout Int, constantPool: ConstantPool) {
+        init(data: Data, cursor: inout Int, constantPool: ConstantPool) throws {
             pathLength = readFromData(data, cursor: &cursor)
             var tempPath = [PathElement]()
             for _ in 0..<pathLength {
-                let pathElement = PathElement(typePathKind: PathElement.TypePathKind(rawValue: readFromData(data, cursor: &cursor))!, typeArgumentIndex: readFromData(data, cursor: &cursor))
+                let rawKind: UInt8 = readFromData(data, cursor: &cursor)
+                guard let kind = PathElement.TypePathKind(rawValue: rawKind) else {
+                    throw ClassFileError.unknownEnumValue("TypePath.PathElement.TypePathKind", rawKind)
+                }
+                let pathElement = PathElement(typePathKind: kind, typeArgumentIndex: readFromData(data, cursor: &cursor))
                 tempPath.append(pathElement)
             }
             path = tempPath
@@ -80,8 +84,12 @@ struct TypeAnnotation {
     let targetInfo: TargetInfo
     let targetPath: TypePath
     let annotation: AttributeInfo.Annotation
-    init(data: Data, cursor: inout Int, constantPool: ConstantPool) {
-        targetType = TargetType(rawValue: readFromData(data, cursor: &cursor))!
+    init(data: Data, cursor: inout Int, constantPool: ConstantPool) throws {
+        let rawTargetType: UInt8 = readFromData(data, cursor: &cursor)
+        guard let tempTargetType = TargetType(rawValue: rawTargetType) else {
+            throw ClassFileError.unknownEnumValue("TypeAnnotation.TargetType", rawTargetType)
+        }
+        targetType = tempTargetType
         switch targetType {
         case .genericClassOrInterface, .genericMethodOrConstructor:
             targetInfo = .typeParameterTarget(readFromData(data, cursor: &cursor))
@@ -110,7 +118,7 @@ struct TypeAnnotation {
         case .castExpression, .argumentForGenericConstructorExpression, .argumentForGenericMethodInvocationExpression, .argumentForGenericConstructorInMethodReferenceExpressionUsingNew, .argumentForGenericMethodInMethodReferencExpressioneUsingIdentifier:
             targetInfo = .typeArgumentTarget(NSSwapBigShortToHost(readFromData(data, cursor: &cursor)), readFromData(data, cursor: &cursor))
         }
-        targetPath = TypePath(data: data, cursor: &cursor, constantPool: constantPool)
-        annotation = AttributeInfo.Annotation(data: data, cursor: &cursor, constantPool: constantPool)
+        targetPath = try TypePath(data: data, cursor: &cursor, constantPool: constantPool)
+        annotation = try AttributeInfo.Annotation(data: data, cursor: &cursor, constantPool: constantPool)
     }
 }
