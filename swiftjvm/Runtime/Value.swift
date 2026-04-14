@@ -14,6 +14,9 @@ enum Value {
     case double(Double)
     case reference(Object?)   // nil == Java null
     case returnAddress(Int)
+    /// Sentinel written into the *upper* local-variable slot of a category-2
+    /// value (long or double).  Loading this slot is always a bug.
+    case placeholder
 }
 
 extension Value {
