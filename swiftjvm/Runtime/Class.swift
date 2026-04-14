@@ -10,7 +10,7 @@ import Foundation
 class Class {
     let classFile: ClassFile
     let name: String
-    let superclass: Class?
+    var superclass: Class?
     let interfaces: [Class]
     let sourceFile: String?
     var fields: [Field] = []
@@ -39,14 +39,10 @@ class Class {
             break // really I should make sure there's not more than 1, but that might be handled by validation later.
         }
         name = classFile.className
-        let superclassResult = Runtime.vm.findOrCreateClass(named: classFile.superclassName)
-        switch superclassResult {
-        case .success(let success):
-            superclass = success
-        case .failure(let error):
-            print("Failed to find or create superclass named: \(classFile.superclassName), \(error)")
-            superclass = nil
-        }
+        // Superclass resolution is deferred to avoid calling back into VM
+        // while VM itself is already being mutated (exclusive access violation).
+        // VM.loadClass wires this up after preload returns.
+        superclass = nil
     }
 
     func findMethod(named name: String, descriptor: String) -> MethodInfo? {

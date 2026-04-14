@@ -29,6 +29,9 @@ struct VM {
 
     mutating func loadClass(_ classFile: ClassFile) {
         let cls = classLoader.preload(classFile)
+        // Resolve superclass from already-loaded classes only — no VM mutation,
+        // so no exclusive-access conflict with the current loadClass mutation.
+        cls.superclass = classLoader.loadedClasses[classFile.superclassName]
         if let main = cls.findMethod(named: "main", descriptor: "([Ljava/lang/String;)V") {
             if main.accessFlags.rawValue & MethodInfo.AccessFlags.Static.rawValue != 0 {
                 if mainMethod != nil {
