@@ -32,13 +32,13 @@
 		BC8F668F2A7C7E8D00F58D35 /* Method.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F668E2A7C7E8D00F58D35 /* Method.swift */; };
 		BC8F66912A7C800000F58D35 /* ClassLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66902A7C800000F58D35 /* ClassLoader.swift */; };
 		BC8F66932A7C800100F58D35 /* ClassLoadError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66922A7C800100F58D35 /* ClassLoadError.swift */; };
-		BC8F66952A7C900000F58D35 /* ClassFileError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66942A7C900000F58D35 /* ClassFileError.swift */; };
-		BC9279D02F8D5B0F00923390 /* UInt8+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */; };
 		BC8F66942A7CE9FD00F58D35 /* BytecodeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66932A7CE9FD00F58D35 /* BytecodeInstruction.swift */; };
+		BC8F66952A7C900000F58D35 /* ClassFileError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66942A7C900000F58D35 /* ClassFileError.swift */; };
 		BC8F66962A7CF3CE00F58D35 /* Operand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66952A7CF3CE00F58D35 /* Operand.swift */; };
 		BC8F66982A7DA35600F58D35 /* Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66972A7DA35600F58D35 /* Runtime.swift */; };
 		BC8F669A2A7DA7BE00F58D35 /* BootstrapLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F66992A7DA7BE00F58D35 /* BootstrapLoader.swift */; };
 		BC8F669C2A7DA80C00F58D35 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F669B2A7DA80C00F58D35 /* Loader.swift */; };
+		BC9279D02F8D5B0F00923390 /* UInt8+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */; };
 		BC9279D22F8D5C0000923392 /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279D32F8D5C0000923393 /* Value.swift */; };
 /* End PBXBuildFile section */
 
@@ -55,6 +55,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		BC44CD2C2F8DBF9800DCB5FF /* Fib.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Fib.class; sourceTree = "<group>"; };
+		BC44CD2D2F8DBF9800DCB5FF /* Fib.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = Fib.java; sourceTree = "<group>"; };
 		BC86587B2AB82121008A0390 /* ClassPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassPath.swift; sourceTree = "<group>"; };
 		BC86587D2AB82C7B008A0390 /* ClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassPathEntry.swift; sourceTree = "<group>"; };
 		BC8658802AB82D17008A0390 /* FileSystemClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemClassPathEntry.swift; sourceTree = "<group>"; };
@@ -83,14 +85,14 @@
 		BC8F668E2A7C7E8D00F58D35 /* Method.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Method.swift; sourceTree = "<group>"; };
 		BC8F66902A7C800000F58D35 /* ClassLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLoader.swift; sourceTree = "<group>"; };
 		BC8F66922A7C800100F58D35 /* ClassLoadError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassLoadError.swift; sourceTree = "<group>"; };
-		BC8F66942A7C900000F58D35 /* ClassFileError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFileError.swift; sourceTree = "<group>"; };
-		BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UInt8+Extensions.swift"; sourceTree = "<group>"; };
-		BC9279D32F8D5C0000923393 /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		BC8F66932A7CE9FD00F58D35 /* BytecodeInstruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BytecodeInstruction.swift; sourceTree = "<group>"; };
+		BC8F66942A7C900000F58D35 /* ClassFileError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassFileError.swift; sourceTree = "<group>"; };
 		BC8F66952A7CF3CE00F58D35 /* Operand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operand.swift; sourceTree = "<group>"; };
 		BC8F66972A7DA35600F58D35 /* Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Runtime.swift; sourceTree = "<group>"; };
 		BC8F66992A7DA7BE00F58D35 /* BootstrapLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BootstrapLoader.swift; sourceTree = "<group>"; };
 		BC8F669B2A7DA80C00F58D35 /* Loader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loader.swift; sourceTree = "<group>"; };
+		BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UInt8+Extensions.swift"; sourceTree = "<group>"; };
+		BC9279D32F8D5C0000923393 /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +165,8 @@
 		BC8F66772A78DE1300F58D35 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				BC44CD2C2F8DBF9800DCB5FF /* Fib.class */,
+				BC44CD2D2F8DBF9800DCB5FF /* Fib.java */,
 				BC8F66782A78E2FF00F58D35 /* Complex.class */,
 				BC8F66752A78DDF600F58D35 /* Complex.java */,
 			);

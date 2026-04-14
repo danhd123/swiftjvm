@@ -52,7 +52,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "/Users/danielhd/src/swiftjvm/swiftjvm/Tests/Complex.class"
+            argument = "/Users/danielhd/src/swiftjvm-interpreter/swiftjvm/Tests/Fib.class"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

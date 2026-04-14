@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct VM {
+class VM {
     var threads: [Thread] = []
     var classLoader: ClassLoader
     var classes: [Class: any Loader] = [:]
@@ -27,7 +27,7 @@ struct VM {
         self.classLoader = ClassLoader(classpath: classpath)
     }
 
-    mutating func loadClass(_ classFile: ClassFile) {
+    func loadClass(_ classFile: ClassFile) {
         let cls = classLoader.preload(classFile)
         // Resolve superclass from already-loaded classes only — no VM mutation,
         // so no exclusive-access conflict with the current loadClass mutation.
@@ -43,7 +43,7 @@ struct VM {
         }
     }
 
-    mutating func findOrCreateClass(named name: String) -> Result<Class?, VM.Error> {
+    func findOrCreateClass(named name: String) -> Result<Class?, VM.Error> {
         if let loadedClass = classes.keys.first(where: { $0.name == name }) {
             return .success(loadedClass)
         } else if name.hasPrefix("[") {
@@ -64,7 +64,7 @@ struct VM {
         }
     }
 
-    mutating func createClass(_ name: String, classFile: ClassFile, loader: any Loader) -> Result<Class, VM.Error> {
+    func createClass(_ name: String, classFile: ClassFile, loader: any Loader) -> Result<Class, VM.Error> {
         if classes.keys.map({ $0.name }).contains(where: { $0 == name }) {
             return .failure(.linkageError(name))
         }
