@@ -80,14 +80,16 @@ struct VM {
         fatalError("createClass: not yet implemented")
     }
 
-    mutating func start() -> Never {
+    // Not mutating — holding an exclusive write lock on Runtime.vm across the
+    // entire execution would conflict with findOrCreateClass calls made by the
+    // interpreter during invokestatic resolution.
+    func start() -> Never {
         guard let mainMethod, let mainClass else {
             fatalError("No main method found")
         }
-        var mainThread = Thread()
+        let mainThread = Thread()
         let mainFrame = Frame(owningClass: mainClass, method: mainMethod)
         mainThread.stackFrames.append(mainFrame)
-        threads.append(mainThread)
         mainThread.execute()
         exit(0)
     }
