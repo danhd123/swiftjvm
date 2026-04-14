@@ -64,7 +64,9 @@ class Frame {
     }
 
     /// Creates a frame ready for execution.  `arguments` are placed into local
-    /// variable slots 0..N-1; remaining slots (up to `maxLocals`) are nil.
+    /// variable slots starting at 0, honouring the JVM 2-slot rule: category-2
+    /// types (long, double) occupy two consecutive slots, with a `.placeholder`
+    /// written into the upper slot.  Remaining slots (up to `maxLocals`) are nil.
     init(owningClass: Class, method: MethodInfo, arguments: [Value] = []) {
         self.owningClass = owningClass
         self.constantPool = owningClass.classFile.constantPool
@@ -72,10 +74,21 @@ class Frame {
         let maxLocals = Int(
             (method.attributes.first { $0 is CodeAttribute } as? CodeAttribute)?.maxLocals ?? 0
         )
-        let count = max(maxLocals, arguments.count)
-        self.localVariables = (0..<count).map { i in
-            LocalVariable(i < arguments.count ? arguments[i] : nil)
+        // Build the local variable array, inserting placeholder upper slots for
+        // category-2 arguments so that slot indices match what javac generates.
+        var slots: [LocalVariable] = []
+        for arg in arguments {
+            slots.append(LocalVariable(arg))
+            switch arg {
+            case .long, .double:
+                slots.append(LocalVariable(.placeholder))
+            default:
+                break
+            }
         }
+        let count = max(maxLocals, slots.count)
+        while slots.count < count { slots.append(LocalVariable()) }
+        self.localVariables = slots
     }
 
     // MARK: - Operand stack helpers
@@ -93,12 +106,22 @@ class Frame {
         guard idx < localVariables.count, let v = localVariables[idx].value else {
             fatalError("Load from uninitialized local variable \(idx)")
         }
+        if case .placeholder = v {
+            fatalError("Loaded category-2 upper slot at local variable \(idx)")
+        }
         push(v)
     }
 
     private func setLocal(_ idx: Int, _ value: Value) {
         while localVariables.count <= idx { localVariables.append(LocalVariable()) }
         localVariables[idx] = LocalVariable(value)
+    }
+
+    /// Store a category-2 value (long or double) at `index` and write a
+    /// `.placeholder` sentinel into `index + 1` to catch accidental loads.
+    private func storeWide(_ value: Value, at index: Int) {
+        setLocal(index, value)
+        setLocal(index + 1, .placeholder)
     }
 
     // MARK: - Branch helper
@@ -298,6 +321,310 @@ class Frame {
         case .invokestatic:
             return executeInvokeStatic(code: code)
 
+        // ── iinc ──────────────────────────────────────────────────────────────
+        case .iinc:
+            let idx   = Int(code[pc]); pc += 1
+            let delta = Int32(Int8(bitPattern: code[pc])); pc += 1
+            guard idx < localVariables.count,
+                  let v = localVariables[idx].value,
+                  case .int(let cur) = v
+            else { fatalError("iinc: invalid local variable \(idx)") }
+            localVariables[idx] = LocalVariable(.int(cur &+ delta))
+            return .continue
+
+        // ── long constants ────────────────────────────────────────────────────
+        case .lconst_0: push(.long(0)); return .continue
+        case .lconst_1: push(.long(1)); return .continue
+
+        // ── long loads ────────────────────────────────────────────────────────
+        case .lload:
+            let idx = Int(code[pc]); pc += 1
+            pushLocal(idx); return .continue
+        case .lload_0: pushLocal(0); return .continue
+        case .lload_1: pushLocal(1); return .continue
+        case .lload_2: pushLocal(2); return .continue
+        case .lload_3: pushLocal(3); return .continue
+
+        // ── long stores ───────────────────────────────────────────────────────
+        case .lstore:
+            let idx = Int(code[pc]); pc += 1
+            storeWide(pop(), at: idx); return .continue
+        case .lstore_0: storeWide(pop(), at: 0); return .continue
+        case .lstore_1: storeWide(pop(), at: 1); return .continue
+        case .lstore_2: storeWide(pop(), at: 2); return .continue
+        case .lstore_3: storeWide(pop(), at: 3); return .continue
+
+        // ── long arithmetic ───────────────────────────────────────────────────
+        case .ladd:
+            let b = pop().asLong!, a = pop().asLong!
+            push(.long(a &+ b)); return .continue
+        case .lsub:
+            let b = pop().asLong!, a = pop().asLong!
+            push(.long(a &- b)); return .continue
+        case .lmul:
+            let b = pop().asLong!, a = pop().asLong!
+            push(.long(a &* b)); return .continue
+        case .ldiv:
+            let b = pop().asLong!, a = pop().asLong!
+            guard b != 0 else { fatalError("ldiv: ArithmeticException / by zero") }
+            push(.long(a / b)); return .continue
+        case .lrem:
+            let b = pop().asLong!, a = pop().asLong!
+            guard b != 0 else { fatalError("lrem: ArithmeticException / by zero") }
+            push(.long(a % b)); return .continue
+        case .lneg:
+            push(.long(0 &- pop().asLong!)); return .continue
+
+        // ── long compare & return ─────────────────────────────────────────────
+        case .lcmp:
+            let b = pop().asLong!, a = pop().asLong!
+            push(.int(a < b ? -1 : a == b ? 0 : 1)); return .continue
+        case .lreturn:
+            return .returned(pop())
+
+        // ── float constants ───────────────────────────────────────────────────
+        case .fconst_0: push(.float(0.0)); return .continue
+        case .fconst_1: push(.float(1.0)); return .continue
+        case .fconst_2: push(.float(2.0)); return .continue
+
+        // ── float loads ───────────────────────────────────────────────────────
+        case .fload:
+            let idx = Int(code[pc]); pc += 1
+            pushLocal(idx); return .continue
+        case .fload_0: pushLocal(0); return .continue
+        case .fload_1: pushLocal(1); return .continue
+        case .fload_2: pushLocal(2); return .continue
+        case .fload_3: pushLocal(3); return .continue
+
+        // ── float stores ──────────────────────────────────────────────────────
+        case .fstore:
+            let idx = Int(code[pc]); pc += 1
+            setLocal(idx, pop()); return .continue
+        case .fstore_0: setLocal(0, pop()); return .continue
+        case .fstore_1: setLocal(1, pop()); return .continue
+        case .fstore_2: setLocal(2, pop()); return .continue
+        case .fstore_3: setLocal(3, pop()); return .continue
+
+        // ── float arithmetic ──────────────────────────────────────────────────
+        case .fadd:
+            let b = pop().asFloat!, a = pop().asFloat!
+            push(.float(a + b)); return .continue
+        case .fsub:
+            let b = pop().asFloat!, a = pop().asFloat!
+            push(.float(a - b)); return .continue
+        case .fmul:
+            let b = pop().asFloat!, a = pop().asFloat!
+            push(.float(a * b)); return .continue
+        case .fdiv:
+            let b = pop().asFloat!, a = pop().asFloat!
+            push(.float(a / b)); return .continue
+        case .frem:
+            let b = pop().asFloat!, a = pop().asFloat!
+            push(.float(a.truncatingRemainder(dividingBy: b))); return .continue
+        case .fneg:
+            push(.float(-pop().asFloat!)); return .continue
+
+        // ── float compare ─────────────────────────────────────────────────────
+        // fcmpl: NaN → -1  |  fcmpg: NaN → +1
+        case .fcmpl:
+            let b = pop().asFloat!, a = pop().asFloat!
+            if a.isNaN || b.isNaN    { push(.int(-1)) }
+            else if a < b            { push(.int(-1)) }
+            else if a == b           { push(.int( 0)) }
+            else                     { push(.int( 1)) }
+            return .continue
+        case .fcmpg:
+            let b = pop().asFloat!, a = pop().asFloat!
+            if a.isNaN || b.isNaN    { push(.int( 1)) }
+            else if a < b            { push(.int(-1)) }
+            else if a == b           { push(.int( 0)) }
+            else                     { push(.int( 1)) }
+            return .continue
+        case .freturn:
+            return .returned(pop())
+
+        // ── double constants ──────────────────────────────────────────────────
+        case .dconst_0: push(.double(0.0)); return .continue
+        case .dconst_1: push(.double(1.0)); return .continue
+
+        // ── double loads ──────────────────────────────────────────────────────
+        case .dload:
+            let idx = Int(code[pc]); pc += 1
+            pushLocal(idx); return .continue
+        case .dload_0: pushLocal(0); return .continue
+        case .dload_1: pushLocal(1); return .continue
+        case .dload_2: pushLocal(2); return .continue
+        case .dload_3: pushLocal(3); return .continue
+
+        // ── double stores ─────────────────────────────────────────────────────
+        case .dstore:
+            let idx = Int(code[pc]); pc += 1
+            storeWide(pop(), at: idx); return .continue
+        case .dstore_0: storeWide(pop(), at: 0); return .continue
+        case .dstore_1: storeWide(pop(), at: 1); return .continue
+        case .dstore_2: storeWide(pop(), at: 2); return .continue
+        case .dstore_3: storeWide(pop(), at: 3); return .continue
+
+        // ── double arithmetic ─────────────────────────────────────────────────
+        case .dadd:
+            let b = pop().asDouble!, a = pop().asDouble!
+            push(.double(a + b)); return .continue
+        case .dsub:
+            let b = pop().asDouble!, a = pop().asDouble!
+            push(.double(a - b)); return .continue
+        case .dmul:
+            let b = pop().asDouble!, a = pop().asDouble!
+            push(.double(a * b)); return .continue
+        case .ddiv:
+            let b = pop().asDouble!, a = pop().asDouble!
+            push(.double(a / b)); return .continue
+        case .drem:
+            let b = pop().asDouble!, a = pop().asDouble!
+            push(.double(a.truncatingRemainder(dividingBy: b))); return .continue
+        case .dneg:
+            push(.double(-pop().asDouble!)); return .continue
+
+        // ── double compare ────────────────────────────────────────────────────
+        case .dcmpl:
+            let b = pop().asDouble!, a = pop().asDouble!
+            if a.isNaN || b.isNaN    { push(.int(-1)) }
+            else if a < b            { push(.int(-1)) }
+            else if a == b           { push(.int( 0)) }
+            else                     { push(.int( 1)) }
+            return .continue
+        case .dcmpg:
+            let b = pop().asDouble!, a = pop().asDouble!
+            if a.isNaN || b.isNaN    { push(.int( 1)) }
+            else if a < b            { push(.int(-1)) }
+            else if a == b           { push(.int( 0)) }
+            else                     { push(.int( 1)) }
+            return .continue
+        case .dreturn:
+            return .returned(pop())
+
+        // ── type conversions ──────────────────────────────────────────────────
+        case .i2l:
+            guard case .int(let v)    = pop() else { fatalError("i2l: expected int") }
+            push(.long(Int64(v)));   return .continue
+        case .i2f:
+            guard case .int(let v)    = pop() else { fatalError("i2f: expected int") }
+            push(.float(Float(v)));  return .continue
+        case .i2d:
+            guard case .int(let v)    = pop() else { fatalError("i2d: expected int") }
+            push(.double(Double(v))); return .continue
+
+        case .l2i:
+            guard case .long(let v)   = pop() else { fatalError("l2i: expected long") }
+            push(.int(Int32(truncatingIfNeeded: v))); return .continue
+        case .l2f:
+            guard case .long(let v)   = pop() else { fatalError("l2f: expected long") }
+            push(.float(Float(v)));  return .continue
+        case .l2d:
+            guard case .long(let v)   = pop() else { fatalError("l2d: expected long") }
+            push(.double(Double(v))); return .continue
+
+        case .f2i:
+            guard case .float(let v)  = pop() else { fatalError("f2i: expected float") }
+            let r32: Int32
+            if v.isNaN              { r32 = 0 }
+            else if v >=  2147483648.0 { r32 = Int32.max }
+            else if v < -2147483648.0  { r32 = Int32.min }
+            else                    { r32 = Int32(v) }
+            push(.int(r32)); return .continue
+        case .f2l:
+            guard case .float(let v)  = pop() else { fatalError("f2l: expected float") }
+            let r64f: Int64
+            if v.isNaN              { r64f = 0 }
+            else if v >=  9.223372036854776e18 { r64f = Int64.max }
+            else if v < -9.223372036854776e18  { r64f = Int64.min }
+            else                    { r64f = Int64(v) }
+            push(.long(r64f)); return .continue
+        case .f2d:
+            guard case .float(let v)  = pop() else { fatalError("f2d: expected float") }
+            push(.double(Double(v))); return .continue
+
+        case .d2i:
+            guard case .double(let v) = pop() else { fatalError("d2i: expected double") }
+            let r32d: Int32
+            if v.isNaN              { r32d = 0 }
+            else if v >=  2147483648.0 { r32d = Int32.max }
+            else if v < -2147483648.0  { r32d = Int32.min }
+            else                    { r32d = Int32(v) }
+            push(.int(r32d)); return .continue
+        case .d2l:
+            guard case .double(let v) = pop() else { fatalError("d2l: expected double") }
+            let r64d: Int64
+            if v.isNaN              { r64d = 0 }
+            else if v >=  9.223372036854776e18 { r64d = Int64.max }
+            else if v < -9.223372036854776e18  { r64d = Int64.min }
+            else                    { r64d = Int64(v) }
+            push(.long(r64d)); return .continue
+        case .d2f:
+            guard case .double(let v) = pop() else { fatalError("d2f: expected double") }
+            push(.float(Float(v)));  return .continue
+
+        case .i2b:
+            guard case .int(let v)    = pop() else { fatalError("i2b: expected int") }
+            push(.int(Int32(Int8(truncatingIfNeeded: v)))); return .continue
+        case .i2c:
+            guard case .int(let v)    = pop() else { fatalError("i2c: expected int") }
+            push(.int(Int32(UInt16(truncatingIfNeeded: v)))); return .continue
+        case .i2s:
+            guard case .int(let v)    = pop() else { fatalError("i2s: expected int") }
+            push(.int(Int32(Int16(truncatingIfNeeded: v)))); return .continue
+
+        // ── constant pool loads ───────────────────────────────────────────────
+        case .ldc:
+            let index = UInt16(code[pc]); pc += 1
+            switch constantPool[index] {
+            case let c as IntegerConstant: push(.int(c.value))
+            case let c as FloatConstant:   push(.float(c.value))
+            case is StringRefConstant:     fatalError("ldc: String constants not yet supported")
+            default: fatalError("ldc: unexpected constant pool type at index \(index)")
+            }
+            return .continue
+
+        case .ldc_w:
+            let hi = UInt16(code[pc]); pc += 1
+            let lo = UInt16(code[pc]); pc += 1
+            let idxW = hi << 8 | lo
+            switch constantPool[idxW] {
+            case let c as IntegerConstant: push(.int(c.value))
+            case let c as FloatConstant:   push(.float(c.value))
+            case is StringRefConstant:     fatalError("ldc_w: String constants not yet supported")
+            default: fatalError("ldc_w: unexpected constant pool type at index \(idxW)")
+            }
+            return .continue
+
+        case .ldc2_w:
+            let hi = UInt16(code[pc]); pc += 1
+            let lo = UInt16(code[pc]); pc += 1
+            let idx2 = hi << 8 | lo
+            switch constantPool[idx2] {
+            case let c as LongConstant:   push(.long(c.value))
+            case let c as DoubleConstant: push(.double(c.value))
+            default: fatalError("ldc2_w: expected Long or Double at index \(idx2)")
+            }
+            return .continue
+
+        // ── category-2 stack ops ──────────────────────────────────────────────
+        case .pop2:
+            // In our model long/double are single stack items (category 2 = 1 slot).
+            _ = pop(); return .continue
+
+        case .dup2:
+            // Category-2 (long/double): duplicate the single item.
+            // Category-1: duplicate the top two items.
+            let top = pop()
+            switch top {
+            case .long, .double:
+                push(top); push(top)
+            default:
+                let second = pop()
+                push(second); push(top); push(second); push(top)
+            }
+            return .continue
+
         default:
             fatalError("Unimplemented opcode \(opcode) at pc \(instructionStart) in \(method.name.string)")
         }
@@ -326,7 +653,7 @@ class Frame {
         let argCount   = parseArgumentCount(descriptor: descriptor)
 
         // Pop arguments in reverse order so slot 0 holds the first argument.
-        var args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+        let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
 
         let classResult = Runtime.vm.findOrCreateClass(named: className)
         guard case .success(let cls) = classResult, let cls else {
