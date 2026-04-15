@@ -14,6 +14,7 @@ class Class {
     let interfaces: [Class]
     let sourceFile: String?
     var fields: [Field] = []
+    var staticFields: [String: Value] = [:]
     var methods: [MethodInfo] = [] // not actually sure this is necessary.
 
     let firstFieldIndex: UInt16
@@ -39,10 +40,30 @@ class Class {
             break // really I should make sure there's not more than 1, but that might be handled by validation later.
         }
         name = classFile.className
+        for field in classFile.fields {
+            guard field.accessFlags.rawValue & FieldInfo.AccessFlags.Static.rawValue != 0 else { continue }
+            let desc = field.descriptor.string as String
+            let defaultValue: Value
+            switch desc.first {
+            case "J":        defaultValue = .long(0)
+            case "F":        defaultValue = .float(0)
+            case "D":        defaultValue = .double(0)
+            case "L", "[":   defaultValue = .reference(nil)
+            default:         defaultValue = .int(0)   // I B C S Z
+            }
+            staticFields[field.name.string as String] = defaultValue
+        }
         // Superclass resolution is deferred to avoid calling back into VM
         // while VM itself is already being mutated (exclusive access violation).
         // VM.loadClass wires this up after preload returns.
         superclass = nil
+    }
+
+    func findStaticField(named name: String) -> FieldInfo? {
+        classFile.fields.first {
+            $0.accessFlags.rawValue & FieldInfo.AccessFlags.Static.rawValue != 0 &&
+            $0.name.string as String == name
+        }
     }
 
     func findMethod(named name: String, descriptor: String) -> MethodInfo? {

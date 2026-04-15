@@ -357,6 +357,56 @@ class Frame {
             push(.long(Int64(bitPattern: UInt64(bitPattern: value) >> count)))
             return .continue
 
+        // ── static fields ─────────────────────────────────────────────────────
+        case .getstatic:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let classConst = constantPool[fieldRef.classIndex] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant,
+                  let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
+            else { fatalError("getstatic: malformed constant pool at \(index)") }
+            let className = classNameConst.string as String
+            let fieldName = nameConst.string as String
+            guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
+                fatalError("getstatic: class not found: \(className)")
+            }
+            if cls.clinitNeedsToBeRun, let clinit = cls.clinit {
+                cls.clinitNeedsToBeRun = false
+                pc -= 3
+                return .invoke(frame: Frame(owningClass: cls, method: clinit, arguments: []))
+            }
+            guard let value = cls.staticFields[fieldName] else {
+                fatalError("getstatic: field not found: \(fieldName) in \(className)")
+            }
+            push(value)
+            return .continue
+
+        case .putstatic:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let classConst = constantPool[fieldRef.classIndex] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant,
+                  let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
+            else { fatalError("putstatic: malformed constant pool at \(index)") }
+            let className = classNameConst.string as String
+            let fieldName = nameConst.string as String
+            guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
+                fatalError("putstatic: class not found: \(className)")
+            }
+            if cls.clinitNeedsToBeRun, let clinit = cls.clinit {
+                cls.clinitNeedsToBeRun = false
+                pc -= 3
+                return .invoke(frame: Frame(owningClass: cls, method: clinit, arguments: []))
+            }
+            cls.staticFields[fieldName] = pop()
+            return .continue
+
         // ── method invocation ─────────────────────────────────────────────────
         case .invokestatic:
             return executeInvokeStatic(code: code)
