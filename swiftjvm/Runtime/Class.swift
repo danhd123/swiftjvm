@@ -66,6 +66,32 @@ class Class {
         }
     }
 
+    /// Returns all instance (non-static) fields declared on this class and every
+    /// superclass, walking the hierarchy bottom-up so subclass fields come first.
+    /// Uses classFile.superclassName + findOrCreateClass at each step so the
+    /// superclass chain is force-loaded even if the Class.superclass pointer is nil.
+    func allInstanceFields() -> [FieldInfo] {
+        var seen = Set<String>()
+        var result: [FieldInfo] = []
+        var current: Class? = self
+        while let cls = current {
+            for f in cls.classFile.fields
+                where f.accessFlags.rawValue & FieldInfo.AccessFlags.Static.rawValue == 0
+                   && seen.insert(f.name.string as String).inserted {
+                result.append(f)
+            }
+            let superName = cls.classFile.superclassName
+            // Stop at java/lang/Object: the interpreter has no JDK stubs, so
+            // attempting to load it would fail. Object declares no instance fields
+            // that our programs depend on, so stopping here is correct.
+            guard !superName.isEmpty && superName != "java/lang/Object" else { break }
+            if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) {
+                current = s
+            } else { break }
+        }
+        return result
+    }
+
     func findMethod(named name: String, descriptor: String) -> MethodInfo? {
         methods.first {
             $0.name.string as String == name &&

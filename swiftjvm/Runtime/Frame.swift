@@ -357,6 +357,32 @@ class Frame {
             push(.long(Int64(bitPattern: UInt64(bitPattern: value) >> count)))
             return .continue
 
+        // ── reference loads ───────────────────────────────────────────────────
+        case .aconst_null:
+            push(.reference(nil)); return .continue
+        case .aload:
+            let idx = Int(code[pc]); pc += 1
+            pushLocal(idx)
+            return .continue
+        case .aload_0: pushLocal(0); return .continue
+        case .aload_1: pushLocal(1); return .continue
+        case .aload_2: pushLocal(2); return .continue
+        case .aload_3: pushLocal(3); return .continue
+
+        // ── reference stores ──────────────────────────────────────────────────
+        case .astore:
+            let idx = Int(code[pc]); pc += 1
+            setLocal(idx, pop())
+            return .continue
+        case .astore_0: setLocal(0, pop()); return .continue
+        case .astore_1: setLocal(1, pop()); return .continue
+        case .astore_2: setLocal(2, pop()); return .continue
+        case .astore_3: setLocal(3, pop()); return .continue
+
+        // ── reference return ──────────────────────────────────────────────────
+        case .areturn:
+            return .returned(pop())
+
         // ── static fields ─────────────────────────────────────────────────────
         case .getstatic:
             let hi = Int(code[pc]); pc += 1
@@ -406,6 +432,128 @@ class Frame {
             }
             cls.staticFields[fieldName] = pop()
             return .continue
+
+        // ── object creation ───────────────────────────────────────────────────
+        case .new:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let classConst = constantPool[index] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant
+            else { fatalError("new: malformed constant pool at \(index)") }
+            let className = classNameConst.string as String
+            guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
+                fatalError("new: class not found: \(className)")
+            }
+            if cls.clinitNeedsToBeRun, let clinit = cls.clinit {
+                cls.clinitNeedsToBeRun = false
+                pc -= 3
+                return .invoke(frame: Frame(owningClass: cls, method: clinit, arguments: []))
+            }
+            push(.reference(Object(clazz: cls)))
+            return .continue
+
+        case .getfield:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            // classIndex is intentionally unused: field lookup is by name via
+            // obj.instanceFields, keyed at Object init time in subclass-first
+            // order by allInstanceFields() — the declaring class is not needed.
+            guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
+            else { fatalError("getfield: malformed constant pool at \(index)") }
+            let fieldName = nameConst.string as String
+            guard let objOptional = pop().asReference else {
+                fatalError("getfield: expected reference on stack for field \(fieldName)")
+            }
+            guard let obj = objOptional else {
+                fatalError("getfield: NullPointerException — null objectref for field \(fieldName)")
+            }
+            guard let value = obj.instanceFields[fieldName] else {
+                fatalError("getfield: field not found: \(fieldName) in \(obj.clazz.name)")
+            }
+            push(value)
+            return .continue
+
+        case .putfield:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            // classIndex intentionally unused — see getfield comment above.
+            guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
+            else { fatalError("putfield: malformed constant pool at \(index)") }
+            let fieldName = nameConst.string as String
+            let value = pop()
+            guard let objOptional = pop().asReference else {
+                fatalError("putfield: expected reference on stack for field \(fieldName)")
+            }
+            guard let obj = objOptional else {
+                fatalError("putfield: NullPointerException — null objectref for field \(fieldName)")
+            }
+            obj.instanceFields[fieldName] = value
+            return .continue
+
+        // ── invokespecial ─────────────────────────────────────────────────────
+        case .invokespecial:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let methodRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let classConst = constantPool[methodRef.classIndex] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant,
+                  let nameAndType = constantPool[methodRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant,
+                  let descConst = constantPool[nameAndType.descriptorIndex] as? Utf8Constant
+            else { fatalError("invokespecial: malformed constant pool at \(index)") }
+            let className  = classNameConst.string as String
+            let methodName = nameConst.string as String
+            let descriptor = descConst.string as String
+            let argCount   = parseArgumentCount(descriptor: descriptor)
+            // Pop args in reverse, then pop 'this' — this lands in slot 0.
+            let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+            let thisValue = pop()
+            // java/lang/Object.<init> is a no-op: no JDK stubs are loaded, and
+            // Object's constructor has no behavior visible to our programs.
+            // Args and 'this' are already popped; discard and continue.
+            // Guard on methodName too: only <init> is safely skippable; any
+            // other invokespecial to java/lang/Object (e.g. super.toString())
+            // should fatalError so it's diagnosed rather than silently dropped.
+            if className == "java/lang/Object" && methodName == "<init>" { return .continue }
+            guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
+                fatalError("invokespecial: class not found: \(className)")
+            }
+            // Walk the superclass chain from the resolved class upward.
+            // Track calleeClass separately: Frame.owningClass drives the constant
+            // pool, so it must be the class that *declares* the method, not just
+            // the class named in the invokespecial constant pool entry.
+            var calleeMethod: MethodInfo?
+            var calleeClass: Class?
+            var searchCls: Class? = cls
+            while let c = searchCls {
+                if let m = c.findMethod(named: methodName, descriptor: descriptor) {
+                    calleeMethod = m
+                    calleeClass  = c
+                    break
+                }
+                let superName = c.classFile.superclassName
+                guard !superName.isEmpty && superName != "java/lang/Object" else { break }
+                if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) {
+                    searchCls = s
+                } else { break }
+            }
+            guard let calleeMethod, let calleeClass else {
+                fatalError("invokespecial: method not found: \(methodName)\(descriptor) in \(className)")
+            }
+            let calleeFrame = Frame(
+                owningClass: calleeClass,
+                method: calleeMethod,
+                arguments: [thisValue] + args
+            )
+            return .invoke(frame: calleeFrame)
 
         // ── method invocation ─────────────────────────────────────────────────
         case .invokestatic:
