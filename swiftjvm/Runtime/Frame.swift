@@ -358,6 +358,8 @@ class Frame {
             return .continue
 
         // ── reference loads ───────────────────────────────────────────────────
+        case .aconst_null:
+            push(.reference(nil)); return .continue
         case .aload:
             let idx = Int(code[pc]); pc += 1
             pushLocal(idx)
@@ -517,7 +519,10 @@ class Frame {
             // java/lang/Object.<init> is a no-op: no JDK stubs are loaded, and
             // Object's constructor has no behavior visible to our programs.
             // Args and 'this' are already popped; discard and continue.
-            if className == "java/lang/Object" { return .continue }
+            // Guard on methodName too: only <init> is safely skippable; any
+            // other invokespecial to java/lang/Object (e.g. super.toString())
+            // should fatalError so it's diagnosed rather than silently dropped.
+            if className == "java/lang/Object" && methodName == "<init>" { return .continue }
             guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
                 fatalError("invokespecial: class not found: \(className)")
             }
