@@ -455,6 +455,9 @@ class Frame {
             let hi = Int(code[pc]); pc += 1
             let lo = Int(code[pc]); pc += 1
             let index = UInt16(hi << 8 | lo)
+            // classIndex is intentionally unused: field lookup is by name via
+            // obj.instanceFields, keyed at Object init time in subclass-first
+            // order by allInstanceFields() — the declaring class is not needed.
             guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
                   let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
                   let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
@@ -476,6 +479,7 @@ class Frame {
             let hi = Int(code[pc]); pc += 1
             let lo = Int(code[pc]); pc += 1
             let index = UInt16(hi << 8 | lo)
+            // classIndex intentionally unused — see getfield comment above.
             guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
                   let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
                   let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
