@@ -304,6 +304,21 @@ class Frame {
             if a <= b { pc = instructionStart + offset }
             return .continue
 
+        // ── reference-null branches ───────────────────────────────────────────
+        case .ifnull:
+            let offset = readBranchOffset(code: code)
+            let ref = pop()
+            if case .reference(let r) = ref, r == nil { pc = instructionStart + offset }
+            else if case .array(_) = ref { /* non-null array — don't branch */ }
+            return .continue
+
+        case .ifnonnull:
+            let offset = readBranchOffset(code: code)
+            let ref = pop()
+            if case .reference(let r) = ref, r != nil { pc = instructionStart + offset }
+            else if case .array(_) = ref { pc = instructionStart + offset }
+            return .continue
+
         // ── unconditional branch ──────────────────────────────────────────────
         case .goto:
             let offset = readBranchOffset(code: code)
@@ -495,6 +510,117 @@ class Frame {
                 fatalError("putfield: NullPointerException — null objectref for field \(fieldName)")
             }
             obj.instanceFields[fieldName] = value
+            return .continue
+
+        // ── arrays ────────────────────────────────────────────────────────────
+        case .newarray:
+            let atype = Int(code[pc]); pc += 1
+            guard let count = pop().asInt, count >= 0 else {
+                fatalError("newarray: invalid count")
+            }
+            let (descriptor, defaultValue): (String, Value)
+            switch atype {
+            case 4:  (descriptor, defaultValue) = ("Z", .int(0))   // boolean
+            case 5:  (descriptor, defaultValue) = ("C", .int(0))   // char
+            case 6:  (descriptor, defaultValue) = ("F", .float(0)) // float
+            case 7:  (descriptor, defaultValue) = ("D", .double(0))// double
+            case 8:  (descriptor, defaultValue) = ("B", .int(0))   // byte
+            case 9:  (descriptor, defaultValue) = ("S", .int(0))   // short
+            case 10: (descriptor, defaultValue) = ("I", .int(0))   // int
+            case 11: (descriptor, defaultValue) = ("J", .long(0))  // long
+            default: fatalError("newarray: unknown atype \(atype)")
+            }
+            push(.array(JVMArray(elementDescriptor: descriptor, count: Int(count), default: defaultValue)))
+            return .continue
+
+        case .anewarray:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let classConst = constantPool[index] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant
+            else { fatalError("anewarray: malformed constant pool at \(index)") }
+            let className = classNameConst.string as String
+            guard let count = pop().asInt, count >= 0 else {
+                fatalError("anewarray: invalid count")
+            }
+            push(.array(JVMArray(elementDescriptor: "L\(className);", count: Int(count), default: .reference(nil))))
+            return .continue
+
+        case .arraylength:
+            guard let arr = pop().asArray else {
+                fatalError("arraylength: expected array reference on stack")
+            }
+            push(.int(Int32(arr.count)))
+            return .continue
+
+        // ── array loads ───────────────────────────────────────────────────────
+        case .iaload, .baload, .caload, .saload:
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("\(opcode): expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("\(opcode): index \(index) out of bounds for length \(arr.count)") }
+            push(arr.elements[Int(index)])
+            return .continue
+
+        case .laload:
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("laload: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("laload: index \(index) out of bounds for length \(arr.count)") }
+            push(arr.elements[Int(index)])
+            return .continue
+
+        case .faload:
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("faload: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("faload: index \(index) out of bounds for length \(arr.count)") }
+            push(arr.elements[Int(index)])
+            return .continue
+
+        case .daload:
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("daload: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("daload: index \(index) out of bounds for length \(arr.count)") }
+            push(arr.elements[Int(index)])
+            return .continue
+
+        case .aaload:
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("aaload: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("aaload: index \(index) out of bounds for length \(arr.count)") }
+            push(arr.elements[Int(index)])
+            return .continue
+
+        // ── array stores ──────────────────────────────────────────────────────
+        case .iastore, .lastore, .fastore, .dastore, .aastore:
+            let value = pop()
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("\(opcode): expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("\(opcode): index \(index) out of bounds for length \(arr.count)") }
+            arr.elements[Int(index)] = value
+            return .continue
+
+        case .bastore:
+            let value = pop().asInt!
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("bastore: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("bastore: index \(index) out of bounds for length \(arr.count)") }
+            arr.elements[Int(index)] = .int(Int32(Int8(truncatingIfNeeded: value)))
+            return .continue
+
+        case .castore:
+            let value = pop().asInt!
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("castore: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("castore: index \(index) out of bounds for length \(arr.count)") }
+            arr.elements[Int(index)] = .int(Int32(value & 0xFFFF))
+            return .continue
+
+        case .sastore:
+            let value = pop().asInt!
+            let index = pop().asInt!
+            guard let arr = pop().asArray else { fatalError("sastore: expected array") }
+            guard index >= 0 && Int(index) < arr.count else { fatalError("sastore: index \(index) out of bounds for length \(arr.count)") }
+            arr.elements[Int(index)] = .int(Int32(Int16(truncatingIfNeeded: value)))
             return .continue
 
         // ── invokespecial ─────────────────────────────────────────────────────
