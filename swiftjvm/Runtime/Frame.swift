@@ -411,6 +411,12 @@ class Frame {
             else { fatalError("getstatic: malformed constant pool at \(index)") }
             let className = classNameConst.string as String
             let fieldName = nameConst.string as String
+            // Native stub: java/lang/System.out → PrintStream sentinel.
+            // No JDK class files are available, so we handle this directly.
+            if className == "java/lang/System" && fieldName == "out" {
+                push(.printStream)
+                return .continue
+            }
             guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
                 fatalError("getstatic: class not found: \(className)")
             }
@@ -682,6 +688,90 @@ class Frame {
             return .invoke(frame: calleeFrame)
 
         // ── method invocation ─────────────────────────────────────────────────
+        case .invokevirtual:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let methodRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let classConst = constantPool[methodRef.classIndex] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant,
+                  let nameAndType = constantPool[methodRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant,
+                  let descConst = constantPool[nameAndType.descriptorIndex] as? Utf8Constant
+            else { fatalError("invokevirtual: malformed constant pool at \(index)") }
+            let className  = classNameConst.string as String
+            let methodName = nameConst.string as String
+            let descriptor = descConst.string as String
+            let argCount   = parseArgumentCount(descriptor: descriptor)
+            let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+            let receiver = pop()
+
+            // ── Native dispatch: java/io/PrintStream ──────────────────────────
+            if case .printStream = receiver {
+                guard className == "java/io/PrintStream" || className == "java/io/FilterOutputStream"
+                else { fatalError("invokevirtual: unexpected receiver class \(className) on PrintStream") }
+                switch methodName {
+                case "println":
+                    if args.isEmpty {
+                        print("")
+                    } else {
+                        switch args[0] {
+                        case .string(let s):  print(s)
+                        case .int(let i):
+                            if descriptor == "(Z)V" { print(i != 0 ? "true" : "false") }
+                            else                    { print(i) }
+                        case .long(let l):    print(l)
+                        case .float(let f):   print(f)
+                        case .double(let d):  print(d)
+                        case .reference(let r) where r == nil: print("null")
+                        default: fatalError("invokevirtual: println: unsupported argument type \(args[0])")
+                        }
+                    }
+                case "print":
+                    if !args.isEmpty {
+                        switch args[0] {
+                        case .string(let s):  Swift.print(s, terminator: "")
+                        case .int(let i):     Swift.print(i, terminator: "")
+                        case .long(let l):    Swift.print(l, terminator: "")
+                        case .float(let f):   Swift.print(f, terminator: "")
+                        case .double(let d):  Swift.print(d, terminator: "")
+                        default: fatalError("invokevirtual: print: unsupported argument type \(args[0])")
+                        }
+                    }
+                default:
+                    fatalError("invokevirtual: unsupported PrintStream method: \(methodName)\(descriptor)")
+                }
+                return .continue
+            }
+
+            // ── Virtual dispatch on user-defined classes ───────────────────────
+            guard let objOptional = receiver.asReference else {
+                fatalError("invokevirtual: expected reference on stack for \(methodName)")
+            }
+            guard let obj = objOptional else {
+                fatalError("invokevirtual: NullPointerException — null receiver for \(methodName)")
+            }
+            var calleeMethod: MethodInfo?
+            var calleeClass: Class?
+            var searchCls: Class? = obj.clazz
+            while let c = searchCls {
+                if let m = c.findMethod(named: methodName, descriptor: descriptor) {
+                    calleeMethod = m
+                    calleeClass  = c
+                    break
+                }
+                let superName = c.classFile.superclassName
+                guard !superName.isEmpty && superName != "java/lang/Object" else { break }
+                if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) {
+                    searchCls = s
+                } else { break }
+            }
+            guard let calleeMethod, let calleeClass else {
+                fatalError("invokevirtual: method not found: \(methodName)\(descriptor) in \(obj.clazz.name)")
+            }
+            return .invoke(frame: Frame(owningClass: calleeClass, method: calleeMethod,
+                                        arguments: [receiver] + args))
+
         case .invokestatic:
             return executeInvokeStatic(code: code)
 
@@ -943,7 +1033,10 @@ class Frame {
             switch constantPool[index] {
             case let c as IntegerConstant: push(.int(c.value))
             case let c as FloatConstant:   push(.float(c.value))
-            case is StringRefConstant:     fatalError("ldc: String constants not yet supported")
+            case let c as StringRefConstant:
+                guard let utf8 = constantPool[c.stringIndex] as? Utf8Constant
+                else { fatalError("ldc: StringRefConstant points to non-Utf8 at \(c.stringIndex)") }
+                push(.string(utf8.string as String))
             default: fatalError("ldc: unexpected constant pool type at index \(index)")
             }
             return .continue
@@ -955,7 +1048,10 @@ class Frame {
             switch constantPool[idxW] {
             case let c as IntegerConstant: push(.int(c.value))
             case let c as FloatConstant:   push(.float(c.value))
-            case is StringRefConstant:     fatalError("ldc_w: String constants not yet supported")
+            case let c as StringRefConstant:
+                guard let utf8 = constantPool[c.stringIndex] as? Utf8Constant
+                else { fatalError("ldc_w: StringRefConstant points to non-Utf8 at \(c.stringIndex)") }
+                push(.string(utf8.string as String))
             default: fatalError("ldc_w: unexpected constant pool type at index \(idxW)")
             }
             return .continue

@@ -124,10 +124,11 @@ class FloatConstant : ClassConstant {
 class LongConstant : ClassConstant {
     let value : Int64
     init(tag:Tag, cursor:inout Int, data:Data) {
-        var temp4 : UInt32 = readFromData(data, cursor: &cursor)
-        let localLong = UInt64(temp4) << 32
-        temp4 = readFromData(data, cursor: &cursor)
-        value = Int64(NSSwapBigLongLongToHost(localLong + UInt64(temp4)))
+        // Each UInt32 half is big-endian in the class file; swap each half
+        // individually before assembling, matching IntegerConstant's pattern.
+        let hi = UInt64(NSSwapBigIntToHost(readFromData(data, cursor: &cursor) as UInt32))
+        let lo = UInt64(NSSwapBigIntToHost(readFromData(data, cursor: &cursor) as UInt32))
+        value = Int64(bitPattern: hi << 32 | lo)
         super.init(withTag: tag)
     }
 }
@@ -135,11 +136,9 @@ class LongConstant : ClassConstant {
 class DoubleConstant : ClassConstant {
     let value : Double
     init(tag:Tag, cursor:inout Int, data:Data) {
-        var temp4 : UInt32 = readFromData(data, cursor: &cursor)
-        var temp8 = UInt64(temp4) << 32
-        temp4 = readFromData(data, cursor: &cursor)
-        temp8 += UInt64(temp4)
-        value = NSSwapBigDoubleToHost(NSSwappedDouble(v: temp8))
+        let hi = UInt64(NSSwapBigIntToHost(readFromData(data, cursor: &cursor) as UInt32))
+        let lo = UInt64(NSSwapBigIntToHost(readFromData(data, cursor: &cursor) as UInt32))
+        value = Double(bitPattern: hi << 32 | lo)
         super.init(withTag: tag)
     }
 }

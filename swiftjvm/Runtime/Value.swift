@@ -14,6 +14,8 @@ enum Value {
     case double(Double)
     case reference(Object?)   // nil == Java null
     case array(JVMArray)
+    case string(String)       // Java String constant (native representation)
+    case printStream          // sentinel for java.io.PrintStream (System.out)
     case returnAddress(Int)
     /// Sentinel written into the *upper* local-variable slot of a category-2
     /// value (long or double).  Loading this slot is always a bug.
@@ -38,5 +40,8 @@ extension Value {
     }
     var asArray: JVMArray? {
         if case .array(let a) = self { return a } else { return nil }
+    }
+    var asString: String? {
+        if case .string(let s) = self { return s } else { return nil }
     }
 }
