@@ -359,8 +359,8 @@ class Frame {
 
         // ── reference loads ───────────────────────────────────────────────────
         case .aload:
-            let index = Int(code[pc]); pc += 1
-            pushLocal(index)
+            let idx = Int(code[pc]); pc += 1
+            pushLocal(idx)
             return .continue
         case .aload_0: pushLocal(0); return .continue
         case .aload_1: pushLocal(1); return .continue
@@ -369,8 +369,8 @@ class Frame {
 
         // ── reference stores ──────────────────────────────────────────────────
         case .astore:
-            let index = Int(code[pc]); pc += 1
-            setLocal(index, pop())
+            let idx = Int(code[pc]); pc += 1
+            setLocal(idx, pop())
             return .continue
         case .astore_0: setLocal(0, pop()); return .continue
         case .astore_1: setLocal(1, pop()); return .continue
