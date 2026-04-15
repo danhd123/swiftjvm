@@ -357,6 +357,30 @@ class Frame {
             push(.long(Int64(bitPattern: UInt64(bitPattern: value) >> count)))
             return .continue
 
+        // ── reference loads ───────────────────────────────────────────────────
+        case .aload:
+            let index = Int(code[pc]); pc += 1
+            pushLocal(index)
+            return .continue
+        case .aload_0: pushLocal(0); return .continue
+        case .aload_1: pushLocal(1); return .continue
+        case .aload_2: pushLocal(2); return .continue
+        case .aload_3: pushLocal(3); return .continue
+
+        // ── reference stores ──────────────────────────────────────────────────
+        case .astore:
+            let index = Int(code[pc]); pc += 1
+            setLocal(index, pop())
+            return .continue
+        case .astore_0: setLocal(0, pop()); return .continue
+        case .astore_1: setLocal(1, pop()); return .continue
+        case .astore_2: setLocal(2, pop()); return .continue
+        case .astore_3: setLocal(3, pop()); return .continue
+
+        // ── reference return ──────────────────────────────────────────────────
+        case .areturn:
+            return .returned(pop())
+
         // ── static fields ─────────────────────────────────────────────────────
         case .getstatic:
             let hi = Int(code[pc]); pc += 1
