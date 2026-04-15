@@ -7,6 +7,19 @@
 
 import Foundation
 
+// MARK: - Helpers
+
+private extension Int32 {
+    /// Read a big-endian signed 32-bit integer from `data` starting at byte `offset`.
+    init(bigEndianBytes data: Data, at offset: Int) {
+        let b0 = UInt32(data[offset])
+        let b1 = UInt32(data[offset + 1])
+        let b2 = UInt32(data[offset + 2])
+        let b3 = UInt32(data[offset + 3])
+        self = Int32(bitPattern: b0 << 24 | b1 << 16 | b2 << 8 | b3)
+    }
+}
+
 // MARK: - ExecutionResult
 
 /// Returned by each call to `executeNextInstruction()` so that `Thread.execute()`
@@ -140,6 +153,10 @@ class Frame {
         let lo = Int(code[pc]); pc += 1
         return Int(Int16(bitPattern: UInt16(hi << 8 | lo)))
     }
+
+    // MARK: - Monitor (no-ops — single-threaded interpreter)
+
+    // monitorenter / monitorexit are handled inline in the switch as no-ops.
 
     // MARK: - Instruction dispatch
 
@@ -324,6 +341,42 @@ class Frame {
             let ref = pop()
             if case .reference(let r) = ref, r != nil { pc = instructionStart + offset }
             else if case .array(_) = ref { pc = instructionStart + offset }
+            return .continue
+
+        // ── switch ────────────────────────────────────────────────────────────
+        case .tableswitch:
+            // Pad pc to the next 4-byte boundary from method start.
+            let pad = (4 - ((instructionStart + 1) % 4)) % 4
+            pc += pad
+            let defaultOffset = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+            let low  = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+            let high = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+            let key = pop().asInt!
+            if key < low || key > high {
+                pc = instructionStart + defaultOffset
+            } else {
+                let offsetIdx = pc + (Int(key) - low) * 4
+                pc = instructionStart + Int(Int32(bigEndianBytes: code, at: offsetIdx))
+            }
+            return .continue
+
+        case .lookupswitch:
+            let pad = (4 - ((instructionStart + 1) % 4)) % 4
+            pc += pad
+            let defaultOffset = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+            let npairs = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+            let key = pop().asInt!
+            var jumped = false
+            for _ in 0..<npairs {
+                let match  = Int32(bigEndianBytes: code, at: pc); pc += 4
+                let offset = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+                if key == match {
+                    pc = instructionStart + offset
+                    jumped = true
+                    break
+                }
+            }
+            if !jumped { pc = instructionStart + defaultOffset }
             return .continue
 
         // ── unconditional branch ──────────────────────────────────────────────
@@ -1194,6 +1247,11 @@ class Frame {
             }
             return .invoke(frame: Frame(owningClass: calleeClass, method: calleeMethod,
                                         arguments: [receiver] + args))
+
+        // ── monitor (no-ops — single-threaded interpreter) ────────────────────
+        case .monitorenter, .monitorexit:
+            _ = pop()   // discard objectref — no locking in single-threaded mode
+            return .continue
 
         default:
             fatalError("Unimplemented opcode \(opcode) at pc \(instructionStart) in \(method.name.string)")
