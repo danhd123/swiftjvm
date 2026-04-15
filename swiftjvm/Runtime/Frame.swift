@@ -431,6 +431,26 @@ class Frame {
             cls.staticFields[fieldName] = pop()
             return .continue
 
+        // ── object creation ───────────────────────────────────────────────────
+        case .new:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let classConst = constantPool[index] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant
+            else { fatalError("new: malformed constant pool at \(index)") }
+            let className = classNameConst.string as String
+            guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
+                fatalError("new: class not found: \(className)")
+            }
+            if cls.clinitNeedsToBeRun, let clinit = cls.clinit {
+                cls.clinitNeedsToBeRun = false
+                pc -= 3
+                return .invoke(frame: Frame(owningClass: cls, method: clinit, arguments: []))
+            }
+            push(.reference(Object(clazz: cls)))
+            return .continue
+
         // ── method invocation ─────────────────────────────────────────────────
         case .invokestatic:
             return executeInvokeStatic(code: code)
