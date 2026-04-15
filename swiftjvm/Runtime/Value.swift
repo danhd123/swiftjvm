@@ -5,6 +5,13 @@
 //  Created by Claude on 4/13/26.
 //
 
+/// Backing store for java.lang.StringBuilder / StringBuffer.
+/// A class so that all Value aliases share the same mutable buffer.
+final class StringBuilderBuffer {
+    var content: String
+    init(_ initial: String = "") { self.content = initial }
+}
+
 /// A JVM computational value — covers all types that can appear on the operand
 /// stack or in a local variable slot.
 enum Value {
@@ -16,6 +23,7 @@ enum Value {
     case array(JVMArray)
     case string(String)       // Java String constant (native representation)
     case printStream          // sentinel for java.io.PrintStream (System.out)
+    case stringBuilder(StringBuilderBuffer)  // sentinel for java.lang.StringBuilder/StringBuffer
     case returnAddress(Int)
     /// Sentinel written into the *upper* local-variable slot of a category-2
     /// value (long or double).  Loading this slot is always a bug.

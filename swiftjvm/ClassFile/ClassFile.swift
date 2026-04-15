@@ -116,6 +116,31 @@ struct ClassFile {
         }
     }
 
+    /// Creates a minimal synthetic ClassFile for a JDK stub class (no fields, no methods).
+    /// Used to give JDK exception types a concrete Class object without real .class bytes.
+    init(stubName: String, superclassName: String) {
+        magic = 0xCAFEBABE
+        minorVersion = 0
+        majorVersion = 52
+        constantPoolCount = 1
+        constantPool = [:]
+        accessFlags = [.Public, .Super]
+        thisClassIndex = 0
+        superClassIndex = 0
+        interfacesCount = 0
+        interfaceIndicies = []
+        fieldsCount = 0
+        fields = []
+        methodsCount = 0
+        methods = []
+        attributesCount = 0
+        attributes = []
+        classFormatValid = true
+        className = stubName
+        self.superclassName = superclassName
+        interfacesNames = []
+    }
+
     static func parseHeader(_ cursor:inout Int, data:Data) throws -> (UInt32, UInt16, UInt16, UInt16) {
         let magic: UInt32 = NSSwapBigIntToHost(readFromData(data, cursor: &cursor))
         guard magic == 0xCAFEBABE else {

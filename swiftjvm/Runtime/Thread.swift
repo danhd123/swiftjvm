@@ -43,7 +43,11 @@ class Thread {
                     stackFrames.removeLast()
                 }
                 if !handled {
-                    fputs("Exception in thread \"main\" \(obj.clazz.name)\n", stderr)
+                    var msg = "Exception in thread \"main\" \(obj.clazz.name)"
+                    if case .string(let detail) = obj.instanceFields["detailMessage"] {
+                        msg += ": \(detail)"
+                    }
+                    fputs(msg + "\n", stderr)
                     exit(1)
                 }
             }

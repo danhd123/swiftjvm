@@ -21,10 +21,43 @@ extension Frame {
         let argCount   = parseArgumentCount(descriptor: descriptor)
         let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
         let thisValue = pop()
+        // ── Native: StringBuilder / StringBuffer <init> ───────────────────────
+        let sbClasses = ["java/lang/StringBuilder", "java/lang/StringBuffer"]
+        if sbClasses.contains(className) && methodName == "<init>" {
+            if case .stringBuilder(let sb) = thisValue {
+                if !args.isEmpty {
+                    switch args[0] {
+                    case .string(let s): sb.content = s
+                    case .int:           sb.content = ""   // capacity hint — ignore
+                    default:             break
+                    }
+                }
+            }
+            return .continue
+        }
+
         // No JDK stubs — treat <init> on the standard exception/Object hierarchy as no-ops.
+        // If a String argument is present, save it as the exception's detailMessage.
         let jdkInitNoOps = ["java/lang/Object", "java/lang/Throwable",
-                             "java/lang/Exception", "java/lang/RuntimeException", "java/lang/Error"]
-        if jdkInitNoOps.contains(className) && methodName == "<init>" { return .continue }
+                             "java/lang/Exception", "java/lang/RuntimeException",
+                             "java/lang/Error", "java/lang/NullPointerException",
+                             "java/lang/IllegalArgumentException",
+                             "java/lang/IllegalStateException",
+                             "java/lang/UnsupportedOperationException",
+                             "java/lang/IndexOutOfBoundsException",
+                             "java/lang/ArrayIndexOutOfBoundsException",
+                             "java/lang/ClassCastException",
+                             "java/lang/ArithmeticException",
+                             "java/lang/StackOverflowError",
+                             "java/lang/OutOfMemoryError"]
+        if jdkInitNoOps.contains(className) && methodName == "<init>" {
+            // Store the detail message if one was passed
+            if !args.isEmpty, case .string(let msg) = args[0],
+               case .reference(let objOpt) = thisValue, let obj = objOpt {
+                obj.instanceFields["detailMessage"] = .string(msg)
+            }
+            return .continue
+        }
         guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
             fatalError("invokespecial: class not found: \(className)")
         }
@@ -86,6 +119,8 @@ extension Frame {
                     case .float(let f):   print(f)
                     case .double(let d):  print(d)
                     case .reference(let r) where r == nil: print("null")
+                    case .stringBuilder(let sb): print(sb.content)
+                    case .reference(let r?): print("\(r.clazz.name)@\(String(UInt(bitPattern: ObjectIdentifier(r)), radix: 16))")
                     default: fatalError("invokevirtual: println: unsupported argument type \(args[0])")
                     }
                 }
@@ -97,6 +132,7 @@ extension Frame {
                     case .long(let l):    Swift.print(l, terminator: "")
                     case .float(let f):   Swift.print(f, terminator: "")
                     case .double(let d):  Swift.print(d, terminator: "")
+                    case .stringBuilder(let sb): Swift.print(sb.content, terminator: "")
                     default: fatalError("invokevirtual: print: unsupported argument type \(args[0])")
                     }
                 }
@@ -114,6 +150,84 @@ extension Frame {
             return .continue
         }
 
+        // ── Native dispatch: java/lang/StringBuilder / StringBuffer ──────────
+        if case .stringBuilder(let sb) = receiver {
+            switch methodName {
+            case "append":
+                let text: String
+                switch args[0] {
+                case .string(let s):  text = s
+                case .int(let i):
+                    if descriptor == "(Z)Ljava/lang/StringBuilder;" ||
+                       descriptor == "(Z)Ljava/lang/StringBuffer;" {
+                        text = i != 0 ? "true" : "false"
+                    } else if descriptor == "(C)Ljava/lang/StringBuilder;" ||
+                              descriptor == "(C)Ljava/lang/StringBuffer;" {
+                        text = String(Character(UnicodeScalar(UInt32(i))!))
+                    } else {
+                        text = String(i)
+                    }
+                case .long(let l):    text = String(l)
+                case .float(let f):   text = String(f)
+                case .double(let d):  text = String(d)
+                case .reference(nil): text = "null"
+                case .reference(let o?): text = "\(o.clazz.name)@\(String(UInt(bitPattern: ObjectIdentifier(o)), radix: 16))"
+                case .stringBuilder(let sb2): text = sb2.content
+                default:              text = "?"
+                }
+                sb.content += text
+                push(.stringBuilder(sb))   // chaining: append returns `this`
+            case "toString":
+                push(.string(sb.content))
+            case "length":
+                push(.int(Int32(sb.content.count)))
+            case "charAt":
+                let idx = Int(args[0].asInt!)
+                let c = sb.content[sb.content.index(sb.content.startIndex, offsetBy: idx)]
+                push(.int(Int32(c.asciiValue ?? 0)))
+            case "deleteCharAt":
+                let idx = Int(args[0].asInt!)
+                let i = sb.content.index(sb.content.startIndex, offsetBy: idx)
+                sb.content.remove(at: i)
+                push(.stringBuilder(sb))
+            case "reverse":
+                sb.content = String(sb.content.reversed())
+                push(.stringBuilder(sb))
+            case "insert":
+                if args.count == 2, let offset = args[0].asInt {
+                    let s: String
+                    switch args[1] {
+                    case .string(let sv): s = sv
+                    case .int(let i):    s = String(i)
+                    default:             s = "?"
+                    }
+                    let i = sb.content.index(sb.content.startIndex, offsetBy: Int(offset))
+                    sb.content.insert(contentsOf: s, at: i)
+                }
+                push(.stringBuilder(sb))
+            case "delete":
+                if args.count == 2, let start = args[0].asInt, let end = args[1].asInt {
+                    let si = sb.content.index(sb.content.startIndex, offsetBy: Int(start))
+                    let ei = sb.content.index(sb.content.startIndex, offsetBy: Int(end))
+                    sb.content.removeSubrange(si..<ei)
+                }
+                push(.stringBuilder(sb))
+            case "substring":
+                let start = Int(args[0].asInt!)
+                let si = sb.content.index(sb.content.startIndex, offsetBy: start)
+                if args.count == 2 {
+                    let end = Int(args[1].asInt!)
+                    let ei = sb.content.index(sb.content.startIndex, offsetBy: end)
+                    push(.string(String(sb.content[si..<ei])))
+                } else {
+                    push(.string(String(sb.content[si...])))
+                }
+            default:
+                fatalError("invokevirtual: unsupported StringBuilder method: \(methodName)\(descriptor)")
+            }
+            return .continue
+        }
+
         // ── Virtual dispatch on user-defined classes ───────────────────────────
         guard let objOptional = receiver.asReference else {
             fatalError("invokevirtual: expected reference on stack for \(methodName)")
@@ -121,13 +235,36 @@ extension Frame {
         guard let obj = objOptional else {
             fatalError("invokevirtual: NullPointerException — null receiver for \(methodName)")
         }
-        guard let (calleeMethod, calleeClass) = virtualLookup(startClass: obj.clazz,
-                                                               methodName: methodName,
-                                                               descriptor: descriptor) else {
+        if let (calleeMethod, calleeClass) = virtualLookup(startClass: obj.clazz,
+                                                            methodName: methodName,
+                                                            descriptor: descriptor) {
+            return .invoke(frame: Frame(owningClass: calleeClass, method: calleeMethod,
+                                        arguments: [receiver] + args))
+        }
+
+        // ── Native fallback: exception / Object methods ────────────────────────
+        let msg: String? = {
+            if case .string(let s) = obj.instanceFields["detailMessage"] { return s }
+            return nil
+        }()
+        switch methodName {
+        case "getMessage", "getLocalizedMessage":
+            if let m = msg { push(.string(m)) } else { push(.reference(nil)) }
+        case "toString":
+            let repr = msg.map { "\(obj.clazz.name): \($0)" } ?? obj.clazz.name
+            push(.string(repr))
+        case "hashCode":
+            push(.int(Int32(truncatingIfNeeded: ObjectIdentifier(obj).hashValue)))
+        case "equals":
+            if case .reference(let other) = args[0] { push(.int(obj === other ? 1 : 0)) }
+            else { push(.int(0)) }
+        case "printStackTrace":
+            let repr = msg.map { "\(obj.clazz.name): \($0)" } ?? obj.clazz.name
+            fputs("\(repr)\n", stderr)
+        default:
             fatalError("invokevirtual: method not found: \(methodName)\(descriptor) in \(obj.clazz.name)")
         }
-        return .invoke(frame: Frame(owningClass: calleeClass, method: calleeMethod,
-                                    arguments: [receiver] + args))
+        return .continue
     }
 
     // MARK: - invokeinterface
@@ -341,6 +478,7 @@ extension Frame {
         case .reference(nil):    return "null"
         case .reference(let o?): return "\(o.clazz.name)@\(String(UInt(bitPattern: ObjectIdentifier(o)), radix: 16))"
         case .array:             return "[array]"
+        case .stringBuilder(let sb): return sb.content
         default:                 return "?"
         }
     }

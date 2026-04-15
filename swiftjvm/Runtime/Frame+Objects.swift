@@ -12,6 +12,13 @@ extension Frame {
               let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant
         else { fatalError("new: malformed constant pool at \(index)") }
         let className = classNameConst.string as String
+
+        // ── Native: StringBuilder / StringBuffer ──────────────────────────────
+        if className == "java/lang/StringBuilder" || className == "java/lang/StringBuffer" {
+            push(.stringBuilder(StringBuilderBuffer()))
+            return .continue
+        }
+
         guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
             fatalError("new: class not found: \(className)")
         }
@@ -58,6 +65,8 @@ extension Frame {
             push(value)
         case .array:
             push(value)   // array cast: accept (no deep type check yet)
+        case .stringBuilder:
+            push(value)   // StringBuilder/StringBuffer — pass through
         default:
             fatalError("checkcast: unexpected value type on stack")
         }
@@ -80,6 +89,10 @@ extension Frame {
             push(.int(isAssignableTo(obj, targetName: targetName) ? 1 : 0))
         case .array:
             push(.int(targetName.hasPrefix("[") ? 1 : 0))
+        case .stringBuilder:
+            let sbNames = ["java/lang/StringBuilder", "java/lang/StringBuffer",
+                           "java/lang/Object", "java/lang/CharSequence", "java/lang/Appendable"]
+            push(.int(sbNames.contains(targetName) ? 1 : 0))
         default:
             fatalError("instanceof: unexpected value type on stack")
         }
