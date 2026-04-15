@@ -60,6 +60,14 @@ extension Frame {
             if case .reference(let r) = ref, r != nil { pc = instrStart + offset }
             else if case .array(_) = ref              { pc = instrStart + offset }
 
+        // ── reference-identity branches ───────────────────────────────────────
+        case .if_acmpeq:
+            let b = pop(); let a = pop(); let offset = readBranchOffset(code: code)
+            if refEquals(a, b) { pc = instrStart + offset }
+        case .if_acmpne:
+            let b = pop(); let a = pop(); let offset = readBranchOffset(code: code)
+            if !refEquals(a, b) { pc = instrStart + offset }
+
         // ── unconditional branches ────────────────────────────────────────────
         case .goto:
             let offset = readBranchOffset(code: code)
@@ -107,5 +115,20 @@ extension Frame {
             fatalError("executeControl: unexpected opcode \(opcode)")
         }
         return .continue
+    }
+}
+
+// MARK: - Reference-equality helper
+
+/// Returns true when two Values refer to the same JVM object.
+/// Strings are compared by value (matching JVM string-interning semantics).
+/// JVMArray and Object comparisons use Swift reference identity.
+private func refEquals(_ a: Value, _ b: Value) -> Bool {
+    switch (a, b) {
+    case (.reference(nil),   .reference(nil)):        return true
+    case (.reference(let x?), .reference(let y?)):   return x === y
+    case (.string(let s1),   .string(let s2)):        return s1 == s2
+    case (.array(let a1),    .array(let a2)):         return a1 === a2
+    default:                                          return false
     }
 }

@@ -220,6 +220,7 @@ class Frame {
         case .ifeq, .ifne, .iflt, .ifge, .ifgt, .ifle,
              .if_icmpeq, .if_icmpne, .if_icmplt, .if_icmpge, .if_icmpgt, .if_icmple,
              .ifnull, .ifnonnull,
+             .if_acmpeq, .if_acmpne,
              .goto, .goto_w,
              .tableswitch, .lookupswitch:
             return executeControl(opcode: opcode, code: code)
