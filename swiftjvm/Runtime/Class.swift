@@ -81,6 +81,9 @@ class Class {
                 result.append(f)
             }
             let superName = cls.classFile.superclassName
+            // Stop at java/lang/Object: the interpreter has no JDK stubs, so
+            // attempting to load it would fail. Object declares no instance fields
+            // that our programs depend on, so stopping here is correct.
             guard !superName.isEmpty && superName != "java/lang/Object" else { break }
             if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) {
                 current = s
