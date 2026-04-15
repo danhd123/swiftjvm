@@ -385,6 +385,35 @@ class Frame {
             pc = instructionStart + offset
             return .continue
 
+        case .goto_w:
+            let offset = Int(Int32(bigEndianBytes: code, at: pc)); pc += 4
+            pc = instructionStart + offset
+            return .continue
+
+        // ── wide prefix ───────────────────────────────────────────────────────
+        case .wide:
+            let wideOpcode = BytecodeInstruction.Opcode(rawValue: code[pc])!; pc += 1
+            let wideIdx = Int(code[pc]) << 8 | Int(code[pc + 1]); pc += 2
+            switch wideOpcode {
+            case .iload:  push(localVariables[wideIdx].value!); return .continue
+            case .lload:  push(localVariables[wideIdx].value!); return .continue
+            case .fload:  push(localVariables[wideIdx].value!); return .continue
+            case .dload:  push(localVariables[wideIdx].value!); return .continue
+            case .aload:  push(localVariables[wideIdx].value!); return .continue
+            case .istore: setLocal(wideIdx, pop()); return .continue
+            case .lstore: setLocal(wideIdx, pop()); return .continue
+            case .fstore: setLocal(wideIdx, pop()); return .continue
+            case .dstore: setLocal(wideIdx, pop()); return .continue
+            case .astore: setLocal(wideIdx, pop()); return .continue
+            case .iinc:
+                let wideConst = Int(Int16(bitPattern: UInt16(code[pc]) << 8 | UInt16(code[pc + 1]))); pc += 2
+                guard case .int(let v) = localVariables[wideIdx].value else { fatalError("wide iinc: not int") }
+                setLocal(wideIdx, .int(v &+ Int32(wideConst)))
+                return .continue
+            default:
+                fatalError("wide: unsupported opcode \(wideOpcode)")
+            }
+
         // ── return ────────────────────────────────────────────────────────────
         case .return:
             return .returned(nil)
@@ -815,6 +844,15 @@ class Frame {
                 default:
                     fatalError("invokevirtual: unsupported PrintStream method: \(methodName)\(descriptor)")
                 }
+                return .continue
+            }
+
+            // ── Native dispatch: java/lang/String ────────────────────────────
+            if case .string(let s) = receiver {
+                let result = executeStringMethod(methodName: methodName,
+                                                 descriptor: descriptor,
+                                                 receiver: s, args: args)
+                if let result { push(result) }
                 return .continue
             }
 
@@ -1323,6 +1361,48 @@ class Frame {
         // Pop arguments in reverse order so slot 0 holds the first argument.
         let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
 
+        // ── Native: java/lang/String static methods ───────────────────────────
+        if className == "java/lang/String" {
+            switch (methodName, descriptor) {
+            case ("valueOf", "(I)Ljava/lang/String;"):
+                push(.string(String(args[0].asInt!))); return .continue
+            case ("valueOf", "(J)Ljava/lang/String;"):
+                push(.string(String(args[0].asLong!))); return .continue
+            case ("valueOf", "(F)Ljava/lang/String;"):
+                push(.string(String(args[0].asFloat!))); return .continue
+            case ("valueOf", "(D)Ljava/lang/String;"):
+                push(.string(String(args[0].asDouble!))); return .continue
+            case ("valueOf", "(Z)Ljava/lang/String;"):
+                push(.string(args[0].asInt! != 0 ? "true" : "false")); return .continue
+            case ("valueOf", "(C)Ljava/lang/String;"):
+                let c = Character(UnicodeScalar(UInt32(args[0].asInt!))!)
+                push(.string(String(c))); return .continue
+            case ("valueOf", _):
+                // Object overload — use .string arg if available, else "null"
+                if case .string(let s) = args[0] { push(.string(s)) }
+                else { push(.string("null")) }
+                return .continue
+            default:
+                fatalError("invokestatic: unsupported String method: \(methodName)\(descriptor)")
+            }
+        }
+
+        // ── Native: java/lang/Integer static methods ──────────────────────────
+        if className == "java/lang/Integer" {
+            switch (methodName, descriptor) {
+            case ("parseInt", "(Ljava/lang/String;)I"):
+                guard case .string(let s) = args[0], let i = Int32(s)
+                else { fatalError("invokestatic: Integer.parseInt: not a number") }
+                push(.int(i)); return .continue
+            case ("toString", "(I)Ljava/lang/String;"):
+                push(.string(String(args[0].asInt!))); return .continue
+            case ("valueOf", "(I)Ljava/lang/Integer;"):
+                push(args[0]); return .continue   // boxed int — treat as primitive
+            default:
+                fatalError("invokestatic: unsupported Integer method: \(methodName)\(descriptor)")
+            }
+        }
+
         let classResult = Runtime.vm.findOrCreateClass(named: className)
         guard case .success(let cls) = classResult, let cls else {
             fatalError("invokestatic: class not found: \(className)")
@@ -1333,5 +1413,110 @@ class Frame {
 
         let calleeFrame = Frame(owningClass: cls, method: calleeMethod, arguments: args)
         return .invoke(frame: calleeFrame)
+    }
+
+    // MARK: - String native dispatch
+
+    /// Executes a native String instance method. Returns the result Value to push,
+    /// or nil for void methods.
+    private func executeStringMethod(methodName: String, descriptor: String,
+                                     receiver s: String, args: [Value]) -> Value? {
+        func arg0String() -> String {
+            if case .string(let v) = args[0] { return v }
+            return "null"
+        }
+        switch methodName {
+        // Identity / conversion
+        case "toString", "intern":
+            return .string(s)
+        case "toCharArray":
+            let arr = JVMArray(elementDescriptor: "C", count: s.unicodeScalars.count, default: .int(0))
+            for (i, scalar) in s.unicodeScalars.enumerated() {
+                arr.elements[i] = .int(Int32(scalar.value))
+            }
+            return .array(arr)
+        // Length / emptiness
+        case "length":
+            return .int(Int32(s.count))
+        case "isEmpty":
+            return .int(s.isEmpty ? 1 : 0)
+        // Char access
+        case "charAt":
+            let idx = Int(args[0].asInt!)
+            guard idx >= 0 && idx < s.count else { fatalError("String.charAt: index \(idx) out of bounds") }
+            let scalar = s.unicodeScalars[s.unicodeScalars.index(s.unicodeScalars.startIndex, offsetBy: idx)]
+            return .int(Int32(scalar.value))
+        // Comparison
+        case "equals":
+            return .int(s == arg0String() ? 1 : 0)
+        case "equalsIgnoreCase":
+            return .int(s.lowercased() == arg0String().lowercased() ? 1 : 0)
+        case "compareTo":
+            return .int(Int32(s < arg0String() ? -1 : s > arg0String() ? 1 : 0))
+        case "hashCode":
+            return .int(Int32(truncatingIfNeeded: s.hashValue))
+        // Searching
+        case "startsWith":
+            return .int(s.hasPrefix(arg0String()) ? 1 : 0)
+        case "endsWith":
+            return .int(s.hasSuffix(arg0String()) ? 1 : 0)
+        case "contains":
+            return .int(s.contains(arg0String()) ? 1 : 0)
+        case "indexOf":
+            if descriptor == "(I)I" {
+                let ch = Character(UnicodeScalar(UInt32(args[0].asInt!))!)
+                if let r = s.firstIndex(of: ch) {
+                    return .int(Int32(s.distance(from: s.startIndex, to: r)))
+                }
+                return .int(-1)
+            } else {
+                let target = arg0String()
+                if let r = s.range(of: target) {
+                    return .int(Int32(s.distance(from: s.startIndex, to: r.lowerBound)))
+                }
+                return .int(-1)
+            }
+        case "lastIndexOf":
+            let target = arg0String()
+            if let r = s.range(of: target, options: .backwards) {
+                return .int(Int32(s.distance(from: s.startIndex, to: r.lowerBound)))
+            }
+            return .int(-1)
+        // Substrings
+        case "substring":
+            let start = Int(args[0].asInt!)
+            if args.count == 1 {
+                guard start <= s.count else { fatalError("String.substring: begin > length") }
+                return .string(String(s.dropFirst(start)))
+            } else {
+                let end = Int(args[1].asInt!)
+                guard start <= end && end <= s.count else { fatalError("String.substring: bounds error") }
+                let startIdx = s.index(s.startIndex, offsetBy: start)
+                let endIdx   = s.index(s.startIndex, offsetBy: end)
+                return .string(String(s[startIdx..<endIdx]))
+            }
+        case "concat":
+            return .string(s + arg0String())
+        // Case / whitespace
+        case "toUpperCase", "toUpperCase()Ljava/lang/String;":
+            return .string(s.uppercased())
+        case "toLowerCase", "toLowerCase()Ljava/lang/String;":
+            return .string(s.lowercased())
+        case "trim":
+            return .string(s.trimmingCharacters(in: .whitespaces))
+        case "strip":
+            return .string(s.trimmingCharacters(in: .whitespacesAndNewlines))
+        // Replace
+        case "replace":
+            if descriptor == "(CC)Ljava/lang/String;" {
+                let from = Character(UnicodeScalar(UInt32(args[0].asInt!))!)
+                let to   = Character(UnicodeScalar(UInt32(args[1].asInt!))!)
+                return .string(s.replacingOccurrences(of: String(from), with: String(to)))
+            }
+            return .string(s.replacingOccurrences(of: arg0String(),
+                with: args.count > 1 ? (args[1].asString ?? "null") : "null"))
+        default:
+            fatalError("invokevirtual: unsupported String method: \(methodName)\(descriptor)")
+        }
     }
 }
