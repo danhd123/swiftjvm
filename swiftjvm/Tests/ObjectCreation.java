@@ -10,8 +10,9 @@ class ObjectCreation {
         this.id = id;       // aload_0, lload_3, putfield
     }
 
-    int sumXY() {
-        return x + y;       // aload_0, getfield x2, iadd, ireturn
+    // Static helper: exercises getfield without needing invokevirtual
+    static int sumXY(ObjectCreation o) {
+        return o.x + o.y;   // getfield x2, iadd, ireturn
     }
 
     static ObjectCreation make(int x, int y, long id) {
@@ -20,6 +21,6 @@ class ObjectCreation {
 
     public static void main(String[] args) {
         ObjectCreation o = make(3, 4, 100L);
-        o.sumXY();          // expect 7
+        sumXY(o);           // invokestatic, getfield x2 — expect 7
     }
 }

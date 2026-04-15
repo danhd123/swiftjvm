@@ -514,6 +514,10 @@ class Frame {
             // Pop args in reverse, then pop 'this' — this lands in slot 0.
             let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
             let thisValue = pop()
+            // java/lang/Object.<init> is a no-op: no JDK stubs are loaded, and
+            // Object's constructor has no behavior visible to our programs.
+            // Args and 'this' are already popped; discard and continue.
+            if className == "java/lang/Object" { return .continue }
             guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
                 fatalError("invokespecial: class not found: \(className)")
             }
