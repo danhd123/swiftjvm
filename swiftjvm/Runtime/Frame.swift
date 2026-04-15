@@ -317,6 +317,46 @@ class Frame {
         case .ireturn:
             return .returned(pop())
 
+        // ── int bitwise ───────────────────────────────────────────────────────
+        case .iand:
+            let b = pop().asInt!, a = pop().asInt!; push(.int(a & b)); return .continue
+        case .ior:
+            let b = pop().asInt!, a = pop().asInt!; push(.int(a | b)); return .continue
+        case .ixor:
+            let b = pop().asInt!, a = pop().asInt!; push(.int(a ^ b)); return .continue
+
+        // ── int shifts (count masked to 5 bits per JVM spec) ─────────────────
+        case .ishl:
+            let count = pop().asInt! & 0x1f; let value = pop().asInt!
+            push(.int(value << count)); return .continue
+        case .ishr:
+            let count = pop().asInt! & 0x1f; let value = pop().asInt!
+            push(.int(value >> count)); return .continue
+        case .iushr:
+            let count = pop().asInt! & 0x1f; let value = pop().asInt!
+            push(.int(Int32(bitPattern: UInt32(bitPattern: value) >> UInt32(count))))
+            return .continue
+
+        // ── long bitwise ──────────────────────────────────────────────────────
+        case .land:
+            let b = pop().asLong!, a = pop().asLong!; push(.long(a & b)); return .continue
+        case .lor:
+            let b = pop().asLong!, a = pop().asLong!; push(.long(a | b)); return .continue
+        case .lxor:
+            let b = pop().asLong!, a = pop().asLong!; push(.long(a ^ b)); return .continue
+
+        // ── long shifts (count is Int32, masked to 6 bits per JVM spec) ──────
+        case .lshl:
+            let count = Int64(pop().asInt! & 0x3f); let value = pop().asLong!
+            push(.long(value << count)); return .continue
+        case .lshr:
+            let count = Int64(pop().asInt! & 0x3f); let value = pop().asLong!
+            push(.long(value >> count)); return .continue
+        case .lushr:
+            let count = UInt64(pop().asInt! & 0x3f); let value = pop().asLong!
+            push(.long(Int64(bitPattern: UInt64(bitPattern: value) >> count)))
+            return .continue
+
         // ── method invocation ─────────────────────────────────────────────────
         case .invokestatic:
             return executeInvokeStatic(code: code)
