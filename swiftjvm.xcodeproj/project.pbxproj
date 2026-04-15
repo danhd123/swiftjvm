@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		163856077EBA4B0DB6F4CDA2 /* Frame+Invoke.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBE38B22A40545CC87EBB843 /* Frame+Invoke.swift */; };
+		57620E5569C0474FBCAE66C8 /* Frame+Objects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452598ABF87246FCAFAD32FD /* Frame+Objects.swift */; };
+		59192F471764458D9B29A0ED /* Frame+Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968BAABF352E468DB7C9E447 /* Frame+Strings.swift */; };
+		B7364419AC5A4DDC88BBFF53 /* Frame+Arrays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DE27D171D1849BFA3A9F1B1 /* Frame+Arrays.swift */; };
+		B7E6C637121E458C96DE36AD /* Frame+Locals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1535CE18D37D431B9044BC0C /* Frame+Locals.swift */; };
 		BC86587C2AB82121008A0390 /* ClassPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC86587B2AB82121008A0390 /* ClassPath.swift */; };
 		BC86587E2AB82C7B008A0390 /* ClassPathEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC86587D2AB82C7B008A0390 /* ClassPathEntry.swift */; };
 		BC8658812AB82D17008A0390 /* FileSystemClassPathEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8658802AB82D17008A0390 /* FileSystemClassPathEntry.swift */; };
@@ -41,14 +46,9 @@
 		BC9279D02F8D5B0F00923390 /* UInt8+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */; };
 		BC9279D22F8D5C0000923392 /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279D32F8D5C0000923393 /* Value.swift */; };
 		BC9279D42F8D5C0000923394 /* JVMArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279D52F8D5C0000923395 /* JVMArray.swift */; };
-		B7E6C637121E458C96DE36AD /* Frame+Locals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1535CE18D37D431B9044BC0C /* Frame+Locals.swift */; };
+		E35BBC457540414E888B258B /* Frame+Fields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B56A9282584DE5911888C5 /* Frame+Fields.swift */; };
 		E3D71E0D6D6D4FD787AF0621 /* Frame+Arithmetic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3096D05BDED44D7F8F70CB7B /* Frame+Arithmetic.swift */; };
 		F76462F87C804ACCBB2041A4 /* Frame+Control.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07D911EAE98419FAC55F720 /* Frame+Control.swift */; };
-		E35BBC457540414E888B258B /* Frame+Fields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B56A9282584DE5911888C5 /* Frame+Fields.swift */; };
-		B7364419AC5A4DDC88BBFF53 /* Frame+Arrays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DE27D171D1849BFA3A9F1B1 /* Frame+Arrays.swift */; };
-		57620E5569C0474FBCAE66C8 /* Frame+Objects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452598ABF87246FCAFAD32FD /* Frame+Objects.swift */; };
-		163856077EBA4B0DB6F4CDA2 /* Frame+Invoke.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBE38B22A40545CC87EBB843 /* Frame+Invoke.swift */; };
-		59192F471764458D9B29A0ED /* Frame+Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 968BAABF352E468DB7C9E447 /* Frame+Strings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -64,8 +64,57 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C7D7EC34D284D14A05FCEF4 /* BitwiseOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = BitwiseOps.java; sourceTree = "<group>"; };
+		1535CE18D37D431B9044BC0C /* Frame+Locals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Locals.swift"; sourceTree = "<group>"; };
+		1CC5FF26A767493386ACD2B8 /* StaticFields.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = StaticFields.java; sourceTree = "<group>"; };
+		275042A758EC41CEB2C96BC0 /* StaticFields.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = StaticFields.class; sourceTree = "<group>"; };
+		3096D05BDED44D7F8F70CB7B /* Frame+Arithmetic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Arithmetic.swift"; sourceTree = "<group>"; };
+		452598ABF87246FCAFAD32FD /* Frame+Objects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Objects.swift"; sourceTree = "<group>"; };
+		4859B3BAF0824742B1CC2F88 /* FloatOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = FloatOps.java; sourceTree = "<group>"; };
+		59ACFE657C6A403BA19D1903 /* IntOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = IntOps.java; sourceTree = "<group>"; };
+		68B6F910513748CF813DD7AF /* NumericOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = NumericOps.class; sourceTree = "<group>"; };
+		70B56A9282584DE5911888C5 /* Frame+Fields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Fields.swift"; sourceTree = "<group>"; };
+		8CA9B673C37840C2B9608CB5 /* NumericOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = NumericOps.java; sourceTree = "<group>"; };
+		9406A7EBDE184EBCA0B5E60C /* BitwiseOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = BitwiseOps.class; sourceTree = "<group>"; };
+		968BAABF352E468DB7C9E447 /* Frame+Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Strings.swift"; sourceTree = "<group>"; };
+		9DE27D171D1849BFA3A9F1B1 /* Frame+Arrays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Arrays.swift"; sourceTree = "<group>"; };
+		A07D911EAE98419FAC55F720 /* Frame+Control.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Control.swift"; sourceTree = "<group>"; };
 		BC44CD2C2F8DBF9800DCB5FF /* Fib.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Fib.class; sourceTree = "<group>"; };
 		BC44CD2D2F8DBF9800DCB5FF /* Fib.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = Fib.java; sourceTree = "<group>"; };
+		BC44CD2E2F90415F00DCB5FF /* Animal.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Animal.class; sourceTree = "<group>"; };
+		BC44CD2F2F90415F00DCB5FF /* AnotherException.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = AnotherException.class; sourceTree = "<group>"; };
+		BC44CD302F90415F00DCB5FF /* ArrayOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = ArrayOps.class; sourceTree = "<group>"; };
+		BC44CD312F90415F00DCB5FF /* ArrayOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = ArrayOps.java; sourceTree = "<group>"; };
+		BC44CD322F90415F00DCB5FF /* Cat.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Cat.class; sourceTree = "<group>"; };
+		BC44CD332F90415F00DCB5FF /* Dog.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Dog.class; sourceTree = "<group>"; };
+		BC44CD342F90415F00DCB5FF /* ExceptionTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = ExceptionTest.class; sourceTree = "<group>"; };
+		BC44CD352F90415F00DCB5FF /* ExceptionTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = ExceptionTest.java; sourceTree = "<group>"; };
+		BC44CD362F90415F00DCB5FF /* Lock.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Lock.class; sourceTree = "<group>"; };
+		BC44CD372F90415F00DCB5FF /* MultiArrayTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = MultiArrayTest.class; sourceTree = "<group>"; };
+		BC44CD382F90415F00DCB5FF /* MultiArrayTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = MultiArrayTest.java; sourceTree = "<group>"; };
+		BC44CD392F90415F00DCB5FF /* MyException.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = MyException.class; sourceTree = "<group>"; };
+		BC44CD3A2F90415F00DCB5FF /* ObjectCreation.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = ObjectCreation.class; sourceTree = "<group>"; };
+		BC44CD3B2F90415F00DCB5FF /* ObjectCreation.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = ObjectCreation.java; sourceTree = "<group>"; };
+		BC44CD3C2F90415F00DCB5FF /* PrintTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = PrintTest.class; sourceTree = "<group>"; };
+		BC44CD3D2F90415F00DCB5FF /* PrintTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = PrintTest.java; sourceTree = "<group>"; };
+		BC44CD3E2F90415F00DCB5FF /* RefCompareTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = RefCompareTest.class; sourceTree = "<group>"; };
+		BC44CD3F2F90415F00DCB5FF /* RefCompareTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = RefCompareTest.java; sourceTree = "<group>"; };
+		BC44CD402F90415F00DCB5FF /* RefObj.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = RefObj.class; sourceTree = "<group>"; };
+		BC44CD412F90415F00DCB5FF /* Speakable.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = Speakable.class; sourceTree = "<group>"; };
+		BC44CD422F90415F00DCB5FF /* StackBox.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = StackBox.class; sourceTree = "<group>"; };
+		BC44CD432F90415F00DCB5FF /* StackOpsTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = StackOpsTest.class; sourceTree = "<group>"; };
+		BC44CD442F90415F00DCB5FF /* StackOpsTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = StackOpsTest.java; sourceTree = "<group>"; };
+		BC44CD452F90415F00DCB5FF /* StringConcatTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = StringConcatTest.class; sourceTree = "<group>"; };
+		BC44CD462F90415F00DCB5FF /* StringConcatTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = StringConcatTest.java; sourceTree = "<group>"; };
+		BC44CD472F90415F00DCB5FF /* StringOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = StringOps.class; sourceTree = "<group>"; };
+		BC44CD482F90415F00DCB5FF /* StringOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = StringOps.java; sourceTree = "<group>"; };
+		BC44CD492F90415F00DCB5FF /* SwitchOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = SwitchOps.class; sourceTree = "<group>"; };
+		BC44CD4A2F90415F00DCB5FF /* SwitchOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = SwitchOps.java; sourceTree = "<group>"; };
+		BC44CD4B2F90415F00DCB5FF /* SyncTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = SyncTest.class; sourceTree = "<group>"; };
+		BC44CD4C2F90415F00DCB5FF /* SystemTest.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = SystemTest.class; sourceTree = "<group>"; };
+		BC44CD4D2F90415F00DCB5FF /* SystemTest.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = SystemTest.java; sourceTree = "<group>"; };
+		BC44CD4E2F90415F00DCB5FF /* TypeOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = TypeOps.class; sourceTree = "<group>"; };
+		BC44CD4F2F90415F00DCB5FF /* TypeOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = TypeOps.java; sourceTree = "<group>"; };
 		BC86587B2AB82121008A0390 /* ClassPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassPath.swift; sourceTree = "<group>"; };
 		BC86587D2AB82C7B008A0390 /* ClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassPathEntry.swift; sourceTree = "<group>"; };
 		BC8658802AB82D17008A0390 /* FileSystemClassPathEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemClassPathEntry.swift; sourceTree = "<group>"; };
@@ -103,24 +152,9 @@
 		BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UInt8+Extensions.swift"; sourceTree = "<group>"; };
 		BC9279D32F8D5C0000923393 /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
 		BC9279D52F8D5C0000923395 /* JVMArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JVMArray.swift; sourceTree = "<group>"; };
-		1535CE18D37D431B9044BC0C /* Frame+Locals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Locals.swift"; sourceTree = "<group>"; };
-		3096D05BDED44D7F8F70CB7B /* Frame+Arithmetic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Arithmetic.swift"; sourceTree = "<group>"; };
-		A07D911EAE98419FAC55F720 /* Frame+Control.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Control.swift"; sourceTree = "<group>"; };
-		70B56A9282584DE5911888C5 /* Frame+Fields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Fields.swift"; sourceTree = "<group>"; };
-		9DE27D171D1849BFA3A9F1B1 /* Frame+Arrays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Arrays.swift"; sourceTree = "<group>"; };
-		452598ABF87246FCAFAD32FD /* Frame+Objects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Objects.swift"; sourceTree = "<group>"; };
 		CBE38B22A40545CC87EBB843 /* Frame+Invoke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Invoke.swift"; sourceTree = "<group>"; };
-		968BAABF352E468DB7C9E447 /* Frame+Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Frame+Strings.swift"; sourceTree = "<group>"; };
-		0C7D7EC34D284D14A05FCEF4 /* BitwiseOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = BitwiseOps.java; sourceTree = "<group>"; };
-		9406A7EBDE184EBCA0B5E60C /* BitwiseOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = BitwiseOps.class; sourceTree = "<group>"; };
-		4859B3BAF0824742B1CC2F88 /* FloatOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = FloatOps.java; sourceTree = "<group>"; };
 		CF0D3BDB85F04CE49130EDFB /* FloatOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = FloatOps.class; sourceTree = "<group>"; };
-		59ACFE657C6A403BA19D1903 /* IntOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = IntOps.java; sourceTree = "<group>"; };
 		F2B6496499B0431798D4631B /* IntOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = IntOps.class; sourceTree = "<group>"; };
-		8CA9B673C37840C2B9608CB5 /* NumericOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = NumericOps.java; sourceTree = "<group>"; };
-		68B6F910513748CF813DD7AF /* NumericOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = NumericOps.class; sourceTree = "<group>"; };
-		1CC5FF26A767493386ACD2B8 /* StaticFields.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = StaticFields.java; sourceTree = "<group>"; };
-		275042A758EC41CEB2C96BC0 /* StaticFields.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = StaticFields.class; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -193,6 +227,40 @@
 		BC8F66772A78DE1300F58D35 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				BC44CD2E2F90415F00DCB5FF /* Animal.class */,
+				BC44CD2F2F90415F00DCB5FF /* AnotherException.class */,
+				BC44CD302F90415F00DCB5FF /* ArrayOps.class */,
+				BC44CD312F90415F00DCB5FF /* ArrayOps.java */,
+				BC44CD322F90415F00DCB5FF /* Cat.class */,
+				BC44CD332F90415F00DCB5FF /* Dog.class */,
+				BC44CD342F90415F00DCB5FF /* ExceptionTest.class */,
+				BC44CD352F90415F00DCB5FF /* ExceptionTest.java */,
+				BC44CD362F90415F00DCB5FF /* Lock.class */,
+				BC44CD372F90415F00DCB5FF /* MultiArrayTest.class */,
+				BC44CD382F90415F00DCB5FF /* MultiArrayTest.java */,
+				BC44CD392F90415F00DCB5FF /* MyException.class */,
+				BC44CD3A2F90415F00DCB5FF /* ObjectCreation.class */,
+				BC44CD3B2F90415F00DCB5FF /* ObjectCreation.java */,
+				BC44CD3C2F90415F00DCB5FF /* PrintTest.class */,
+				BC44CD3D2F90415F00DCB5FF /* PrintTest.java */,
+				BC44CD3E2F90415F00DCB5FF /* RefCompareTest.class */,
+				BC44CD3F2F90415F00DCB5FF /* RefCompareTest.java */,
+				BC44CD402F90415F00DCB5FF /* RefObj.class */,
+				BC44CD412F90415F00DCB5FF /* Speakable.class */,
+				BC44CD422F90415F00DCB5FF /* StackBox.class */,
+				BC44CD432F90415F00DCB5FF /* StackOpsTest.class */,
+				BC44CD442F90415F00DCB5FF /* StackOpsTest.java */,
+				BC44CD452F90415F00DCB5FF /* StringConcatTest.class */,
+				BC44CD462F90415F00DCB5FF /* StringConcatTest.java */,
+				BC44CD472F90415F00DCB5FF /* StringOps.class */,
+				BC44CD482F90415F00DCB5FF /* StringOps.java */,
+				BC44CD492F90415F00DCB5FF /* SwitchOps.class */,
+				BC44CD4A2F90415F00DCB5FF /* SwitchOps.java */,
+				BC44CD4B2F90415F00DCB5FF /* SyncTest.class */,
+				BC44CD4C2F90415F00DCB5FF /* SystemTest.class */,
+				BC44CD4D2F90415F00DCB5FF /* SystemTest.java */,
+				BC44CD4E2F90415F00DCB5FF /* TypeOps.class */,
+				BC44CD4F2F90415F00DCB5FF /* TypeOps.java */,
 				9406A7EBDE184EBCA0B5E60C /* BitwiseOps.class */,
 				0C7D7EC34D284D14A05FCEF4 /* BitwiseOps.java */,
 				BC8F66782A78E2FF00F58D35 /* Complex.class */,
