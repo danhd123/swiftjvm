@@ -518,11 +518,16 @@ class Frame {
                 fatalError("invokespecial: class not found: \(className)")
             }
             // Walk the superclass chain from the resolved class upward.
-            var calleeMethod: MethodInfo? = nil
+            // Track calleeClass separately: Frame.owningClass drives the constant
+            // pool, so it must be the class that *declares* the method, not just
+            // the class named in the invokespecial constant pool entry.
+            var calleeMethod: MethodInfo?
+            var calleeClass: Class?
             var searchCls: Class? = cls
             while let c = searchCls {
                 if let m = c.findMethod(named: methodName, descriptor: descriptor) {
                     calleeMethod = m
+                    calleeClass  = c
                     break
                 }
                 let superName = c.classFile.superclassName
@@ -531,11 +536,11 @@ class Frame {
                     searchCls = s
                 } else { break }
             }
-            guard let calleeMethod else {
+            guard let calleeMethod, let calleeClass else {
                 fatalError("invokespecial: method not found: \(methodName)\(descriptor) in \(className)")
             }
             let calleeFrame = Frame(
-                owningClass: cls,
+                owningClass: calleeClass,
                 method: calleeMethod,
                 arguments: [thisValue] + args
             )
