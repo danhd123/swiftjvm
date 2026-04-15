@@ -495,6 +495,52 @@ class Frame {
             obj.instanceFields[fieldName] = value
             return .continue
 
+        // ── invokespecial ─────────────────────────────────────────────────────
+        case .invokespecial:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let methodRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let classConst = constantPool[methodRef.classIndex] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant,
+                  let nameAndType = constantPool[methodRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant,
+                  let descConst = constantPool[nameAndType.descriptorIndex] as? Utf8Constant
+            else { fatalError("invokespecial: malformed constant pool at \(index)") }
+            let className  = classNameConst.string as String
+            let methodName = nameConst.string as String
+            let descriptor = descConst.string as String
+            let argCount   = parseArgumentCount(descriptor: descriptor)
+            // Pop args in reverse, then pop 'this' — this lands in slot 0.
+            let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+            let thisValue = pop()
+            guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
+                fatalError("invokespecial: class not found: \(className)")
+            }
+            // Walk the superclass chain from the resolved class upward.
+            var calleeMethod: MethodInfo? = nil
+            var searchCls: Class? = cls
+            while let c = searchCls {
+                if let m = c.findMethod(named: methodName, descriptor: descriptor) {
+                    calleeMethod = m
+                    break
+                }
+                let superName = c.classFile.superclassName
+                guard !superName.isEmpty && superName != "java/lang/Object" else { break }
+                if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) {
+                    searchCls = s
+                } else { break }
+            }
+            guard let calleeMethod else {
+                fatalError("invokespecial: method not found: \(methodName)\(descriptor) in \(className)")
+            }
+            let calleeFrame = Frame(
+                owningClass: cls,
+                method: calleeMethod,
+                arguments: [thisValue] + args
+            )
+            return .invoke(frame: calleeFrame)
+
         // ── method invocation ─────────────────────────────────────────────────
         case .invokestatic:
             return executeInvokeStatic(code: code)
