@@ -238,7 +238,7 @@ class Frame {
         case .putfield:     return executePutField(code: code)
 
         // ── arrays ────────────────────────────────────────────────────────────
-        case .newarray, .anewarray, .arraylength,
+        case .newarray, .anewarray, .multianewarray, .arraylength,
              .iaload, .laload, .faload, .daload, .aaload, .baload, .caload, .saload,
              .iastore, .lastore, .fastore, .dastore, .aastore, .bastore, .castore, .sastore:
             return executeArrayOp(opcode: opcode, code: code)
