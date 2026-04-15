@@ -222,6 +222,16 @@ extension Frame {
             }
         }
 
+        // ── Native: java/lang/System static methods ──────────────────────────
+        if className == "java/lang/System" {
+            switch (methodName, descriptor) {
+            case ("exit", "(I)V"):
+                exit(args.isEmpty ? 0 : args[0].asInt!)
+            default:
+                fatalError("invokestatic: unsupported System method: \(methodName)\(descriptor)")
+            }
+        }
+
         guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
             fatalError("invokestatic: class not found: \(className)")
         }
