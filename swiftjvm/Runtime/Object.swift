@@ -2,8 +2,6 @@
 //  Object.swift
 //  swiftjvm
 
-import Foundation
-
 class Object {
     let clazz: Class
     var instanceFields: [String: Value]
