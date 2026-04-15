@@ -181,9 +181,80 @@ extension Frame {
                 let second = pop()
                 push(second); push(top); push(second); push(top)
             }
+
+        // ── Insert-dup family ──────────────────────────────────────────────────
+
+        case .dup_x1:
+            // ..., v2, v1  →  ..., v1, v2, v1   (both cat-1)
+            let v1 = pop(); let v2 = pop()
+            push(v1); push(v2); push(v1)
+
+        case .dup_x2:
+            let v1 = pop(); let v2 = pop()
+            if isCategory2(v2) {
+                // Form 2: v1=cat-1, v2=cat-2  →  ..., v1, v2, v1
+                push(v1); push(v2); push(v1)
+            } else {
+                // Form 1: all cat-1  →  ..., v1, v3, v2, v1
+                let v3 = pop()
+                push(v1); push(v3); push(v2); push(v1)
+            }
+
+        case .dup2_x1:
+            let v1 = pop()
+            if isCategory2(v1) {
+                // Form 2: v1=cat-2, v2=cat-1  →  ..., v1, v2, v1
+                let v2 = pop()
+                push(v1); push(v2); push(v1)
+            } else {
+                // Form 1: all cat-1  →  ..., v2, v1, v3, v2, v1
+                let v2 = pop(); let v3 = pop()
+                push(v2); push(v1); push(v3); push(v2); push(v1)
+            }
+
+        case .dup2_x2:
+            let v1 = pop()
+            if isCategory2(v1) {
+                let v2 = pop()
+                if isCategory2(v2) {
+                    // Form 4: v1=cat-2, v2=cat-2  →  ..., v1, v2, v1
+                    push(v1); push(v2); push(v1)
+                } else {
+                    // Form 2: v1=cat-2, v2=cat-1, v3=cat-1  →  ..., v1, v3, v2, v1
+                    let v3 = pop()
+                    push(v1); push(v3); push(v2); push(v1)
+                }
+            } else {
+                let v2 = pop(); let v3 = pop()
+                if isCategory2(v3) {
+                    // Form 3: v1=cat-1, v2=cat-1, v3=cat-2  →  ..., v2, v1, v3, v2, v1
+                    push(v2); push(v1); push(v3); push(v2); push(v1)
+                } else {
+                    // Form 1: all cat-1  →  ..., v2, v1, v4, v3, v2, v1
+                    let v4 = pop()
+                    push(v2); push(v1); push(v4); push(v3); push(v2); push(v1)
+                }
+            }
+
+        case .swap:
+            // ..., v2, v1  →  ..., v1, v2   (both cat-1)
+            let v1 = pop(); let v2 = pop()
+            push(v1); push(v2)
+
         default:
             fatalError("executeStackOp: unexpected opcode \(opcode)")
         }
         return .continue
     }
+}
+
+// MARK: - Category-2 helper
+
+/// Returns true for long and double — the JVM category-2 computational types.
+/// (In this interpreter they occupy a single stack slot, but dup_x2 / dup2_x* still
+/// need to distinguish them from category-1 types to select the right operand form.)
+private func isCategory2(_ v: Value) -> Bool {
+    if case .long   = v { return true }
+    if case .double = v { return true }
+    return false
 }

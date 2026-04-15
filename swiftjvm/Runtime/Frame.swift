@@ -196,7 +196,8 @@ class Frame {
             return executeLocalAccess(opcode: opcode, code: code)
 
         // ── stack manipulation ────────────────────────────────────────────────
-        case .pop, .pop2, .dup, .dup2:
+        case .pop, .pop2, .dup, .dup2,
+             .dup_x1, .dup_x2, .dup2_x1, .dup2_x2, .swap:
             return executeStackOp(opcode: opcode)
 
         // ── arithmetic, bitwise, shifts, numeric comparisons ──────────────────
