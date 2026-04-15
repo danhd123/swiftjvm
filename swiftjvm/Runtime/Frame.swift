@@ -451,6 +451,46 @@ class Frame {
             push(.reference(Object(clazz: cls)))
             return .continue
 
+        case .getfield:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
+            else { fatalError("getfield: malformed constant pool at \(index)") }
+            let fieldName = nameConst.string as String
+            guard let objOptional = pop().asReference else {
+                fatalError("getfield: expected reference on stack for field \(fieldName)")
+            }
+            guard let obj = objOptional else {
+                fatalError("getfield: NullPointerException — null objectref for field \(fieldName)")
+            }
+            guard let value = obj.instanceFields[fieldName] else {
+                fatalError("getfield: field not found: \(fieldName) in \(obj.clazz.name)")
+            }
+            push(value)
+            return .continue
+
+        case .putfield:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let fieldRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let nameAndType = constantPool[fieldRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant
+            else { fatalError("putfield: malformed constant pool at \(index)") }
+            let fieldName = nameConst.string as String
+            let value = pop()
+            guard let objOptional = pop().asReference else {
+                fatalError("putfield: expected reference on stack for field \(fieldName)")
+            }
+            guard let obj = objOptional else {
+                fatalError("putfield: NullPointerException — null objectref for field \(fieldName)")
+            }
+            obj.instanceFields[fieldName] = value
+            return .continue
+
         // ── method invocation ─────────────────────────────────────────────────
         case .invokestatic:
             return executeInvokeStatic(code: code)
