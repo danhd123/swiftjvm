@@ -13,6 +13,7 @@ enum Value {
     case float(Float)
     case double(Double)
     case reference(Object?)   // nil == Java null
+    case array(JVMArray)
     case returnAddress(Int)
     /// Sentinel written into the *upper* local-variable slot of a category-2
     /// value (long or double).  Loading this slot is always a bug.
@@ -34,5 +35,8 @@ extension Value {
     }
     var asReference: Object?? {
         if case .reference(let v) = self { return v } else { return nil }
+    }
+    var asArray: JVMArray? {
+        if case .array(let a) = self { return a } else { return nil }
     }
 }

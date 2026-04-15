@@ -40,6 +40,7 @@
 		BC8F669C2A7DA80C00F58D35 /* Loader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8F669B2A7DA80C00F58D35 /* Loader.swift */; };
 		BC9279D02F8D5B0F00923390 /* UInt8+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */; };
 		BC9279D22F8D5C0000923392 /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279D32F8D5C0000923393 /* Value.swift */; };
+		BC9279D42F8D5C0000923394 /* JVMArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9279D52F8D5C0000923395 /* JVMArray.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -93,6 +94,7 @@
 		BC8F669B2A7DA80C00F58D35 /* Loader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loader.swift; sourceTree = "<group>"; };
 		BC9279CF2F8D5B0F00923390 /* UInt8+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UInt8+Extensions.swift"; sourceTree = "<group>"; };
 		BC9279D32F8D5C0000923393 /* Value.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
+		BC9279D52F8D5C0000923395 /* JVMArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JVMArray.swift; sourceTree = "<group>"; };
 		0C7D7EC34D284D14A05FCEF4 /* BitwiseOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = BitwiseOps.java; sourceTree = "<group>"; };
 		9406A7EBDE184EBCA0B5E60C /* BitwiseOps.class */ = {isa = PBXFileReference; lastKnownFileType = compiled.javaclass; path = BitwiseOps.class; sourceTree = "<group>"; };
 		4859B3BAF0824742B1CC2F88 /* FloatOps.java */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.java; path = FloatOps.java; sourceTree = "<group>"; };
@@ -204,6 +206,7 @@
 				BC8F66822A7A434400F58D35 /* Object.swift */,
 				BC8F66842A7A454700F58D35 /* LocalVariable.swift */,
 				BC9279D32F8D5C0000923393 /* Value.swift */,
+				BC9279D52F8D5C0000923395 /* JVMArray.swift */,
 				BC8F66882A7C5CBC00F58D35 /* Field.swift */,
 				BC8F668C2A7C7B9600F58D35 /* Class.swift */,
 				BC8F668E2A7C7E8D00F58D35 /* Method.swift */,
@@ -317,6 +320,7 @@
 				BC8F66932A7C800100F58D35 /* ClassLoadError.swift in Sources */,
 				BC8F66952A7C900000F58D35 /* ClassFileError.swift in Sources */,
 				BC9279D22F8D5C0000923392 /* Value.swift in Sources */,
+				BC9279D42F8D5C0000923394 /* JVMArray.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
