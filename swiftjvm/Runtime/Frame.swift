@@ -257,6 +257,7 @@ class Frame {
         case .invokevirtual:    return executeInvokeVirtual(code: code)
         case .invokestatic:     return executeInvokeStatic(code: code)
         case .invokeinterface:  return executeInvokeInterface(code: code)
+        case .invokedynamic:    return executeInvokeDynamic(code: code)
 
         default:
             fatalError("Unimplemented opcode \(opcode) at pc \(instructionStart) in \(method.name.string)")

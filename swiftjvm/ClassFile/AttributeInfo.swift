@@ -478,7 +478,7 @@ class BootstrapMethodsAttribute: AttributeInfo {
         let numBootstrapArguments : UInt16
         let bootstrapArgumentsIndexes : [UInt16]
         //cached:
-        let bootstrapMethodRef : MethodOrFieldRefConstant
+        let bootstrapMethodRef : MethodHandleConstant
         let bootstrapArguments : [ClassConstant]
         init(data:Data, cursor:inout Int, constantPool:ConstantPool) throws {
             bootstrapMethodRefIndex = NSSwapBigShortToHost(readFromData(data, cursor: &cursor))
@@ -488,7 +488,7 @@ class BootstrapMethodsAttribute: AttributeInfo {
                 tempIndicies.append(NSSwapBigShortToHost(readFromData(data, cursor: &cursor)))
             }
             bootstrapArgumentsIndexes = tempIndicies
-            guard let tempBootstrapMethodRef = constantPool[bootstrapMethodRefIndex] as? MethodOrFieldRefConstant else {
+            guard let tempBootstrapMethodRef = constantPool[bootstrapMethodRefIndex] as? MethodHandleConstant else {
                 throw ClassFileError.invalidConstantPoolType(bootstrapMethodRefIndex)
             }
             bootstrapMethodRef = tempBootstrapMethodRef

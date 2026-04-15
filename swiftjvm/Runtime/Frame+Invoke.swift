@@ -259,4 +259,89 @@ extension Frame {
         }
         return nil
     }
+
+    // MARK: - invokedynamic
+
+    func executeInvokeDynamic(code: Data) -> ExecutionResult {
+        let hi = Int(code[pc]); pc += 1
+        let lo = Int(code[pc]); pc += 1
+        let index = UInt16(hi << 8 | lo)
+        pc += 2  // skip two reserved zero bytes
+
+        guard let invokeDyn   = constantPool[index] as? InvokeDynamicConstant,
+              let nameAndType = constantPool[invokeDyn.nameAndTypeIndex] as? NameAndTypeConstant,
+              let nameConst   = constantPool[nameAndType.nameIndex] as? Utf8Constant,
+              let descConst   = constantPool[nameAndType.descriptorIndex] as? Utf8Constant
+        else { fatalError("invokedynamic: malformed constant pool at \(index)") }
+
+        let methodName = nameConst.string as String
+        let descriptor = descConst.string as String
+
+        guard methodName == "makeConcatWithConstants" || methodName == "makeConcat" else {
+            fatalError("invokedynamic: unsupported bootstrap: \(methodName)")
+        }
+
+        let argCount = parseArgumentCount(descriptor: descriptor)
+        let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+
+        // makeConcat: concatenate all dynamic args in order (no recipe needed)
+        if methodName == "makeConcat" {
+            push(.string(args.map { valueToString($0) }.joined()))
+            return .continue
+        }
+
+        // makeConcatWithConstants: follow the recipe in bootstrap arg[0]
+        let bsmIdx = Int(invokeDyn.bootstrapMethodAttrIndex)
+        guard let bsma = owningClass.classFile.attributes.first(where: { $0 is BootstrapMethodsAttribute })
+                         as? BootstrapMethodsAttribute,
+              bsmIdx < bsma.bootstrapMethods.count
+        else { fatalError("invokedynamic: missing BootstrapMethods attribute") }
+
+        let bm = bsma.bootstrapMethods[bsmIdx]
+        guard !bm.bootstrapArguments.isEmpty,
+              let strRef = bm.bootstrapArguments[0] as? StringRefConstant,
+              let recipeUtf8 = constantPool[strRef.stringIndex] as? Utf8Constant
+        else { fatalError("invokedynamic: cannot resolve recipe from bootstrap arg[0]") }
+
+        let recipe = recipeUtf8.string as String
+
+        // Build the concatenated result from the recipe:
+        //   \u0001 → next dynamic argument
+        //   \u0002 → next static bootstrap constant (beyond the recipe itself)
+        //   other  → literal character
+        var result = ""
+        var dynIdx   = 0
+        var constIdx = 1   // bm.bootstrapArguments[0] is the recipe; [1+] are extra constants
+        for scalar in recipe.unicodeScalars {
+            switch scalar.value {
+            case 1:   // dynamic arg placeholder
+                if dynIdx < args.count { result += valueToString(args[dynIdx]); dynIdx += 1 }
+            case 2:   // static bootstrap constant placeholder
+                if constIdx < bm.bootstrapArguments.count,
+                   let sc  = bm.bootstrapArguments[constIdx] as? StringRefConstant,
+                   let utf = constantPool[sc.stringIndex] as? Utf8Constant {
+                    result += utf.string as String; constIdx += 1
+                }
+            default:
+                result.append(Character(scalar))
+            }
+        }
+        push(.string(result))
+        return .continue
+    }
+
+    /// Converts any JVM Value to its Java String.valueOf() equivalent.
+    private func valueToString(_ v: Value) -> String {
+        switch v {
+        case .int(let i):        return String(i)
+        case .long(let l):       return String(l)
+        case .float(let f):      return String(f)
+        case .double(let d):     return String(d)
+        case .string(let s):     return s
+        case .reference(nil):    return "null"
+        case .reference(let o?): return "\(o.clazz.name)@\(String(UInt(bitPattern: ObjectIdentifier(o)), radix: 16))"
+        case .array:             return "[array]"
+        default:                 return "?"
+        }
+    }
 }
