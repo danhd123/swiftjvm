@@ -25,6 +25,27 @@ class Thread {
                 }
             case .invoke(let calleeFrame):
                 stackFrames.append(calleeFrame)
+            case .thrown(let exception):
+                guard case .reference(let objOpt) = exception, let obj = objOpt else {
+                    fatalError("Thread: thrown value is not a reference")
+                }
+                stackFrames.removeLast()   // pop the frame that couldn't handle it
+                var handled = false
+                while !stackFrames.isEmpty {
+                    let callerFrame = stackFrames.last!
+                    if let handlerPC = callerFrame.findExceptionHandler(
+                            at: callerFrame.lastInstructionStart, for: obj) {
+                        callerFrame.pc = handlerPC
+                        callerFrame.push(exception)
+                        handled = true
+                        break
+                    }
+                    stackFrames.removeLast()
+                }
+                if !handled {
+                    fputs("Exception in thread \"main\" \(obj.clazz.name)\n", stderr)
+                    exit(1)
+                }
             }
         }
     }

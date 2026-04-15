@@ -19,6 +19,9 @@ enum ExecutionResult {
     case returned(Value?)
     /// Push `frame` onto the thread's frame stack and continue execution there.
     case invoke(frame: Frame)
+    /// An exception was thrown and no handler was found in the current frame.
+    /// Thread.execute() should unwind frames until a handler is found.
+    case thrown(Value)
 }
 
 // MARK: - Argument count parsing
@@ -58,6 +61,9 @@ class Frame {
     var localVariables: [LocalVariable]
     var operandStack: [Value] = []
     var pc: Int = 0
+    /// PC of the most recently started instruction — used by Thread to locate
+    /// the right exception-table range when unwinding into this frame.
+    var lastInstructionStart: Int = 0
 
     var codeAttribute: CodeAttribute? {
         method.attributes.first { $0 is CodeAttribute } as? CodeAttribute
@@ -143,6 +149,7 @@ class Frame {
         }
         let code = codeAttr.code
         let instructionStart = pc
+        lastInstructionStart = pc
         let rawOpcode: UInt8 = code[pc]; pc += 1
 
         guard let opcode = BytecodeInstruction.Opcode(rawValue: rawOpcode) else {
@@ -474,6 +481,17 @@ class Frame {
             push(.reference(Object(clazz: cls)))
             return .continue
 
+        // ── athrow ────────────────────────────────────────────────────────────
+        case .athrow:
+            guard case .reference(let objOpt) = pop(), let obj = objOpt
+            else { fatalError("athrow: NullPointerException — null reference thrown") }
+            if let handlerPC = findExceptionHandler(at: instructionStart, for: obj) {
+                pc = handlerPC
+                push(.reference(obj))
+                return .continue   // handler found in this frame
+            }
+            return .thrown(.reference(obj))   // no local handler — unwind
+
         case .getfield:
             let hi = Int(code[pc]); pc += 1
             let lo = Int(code[pc]); pc += 1
@@ -654,7 +672,10 @@ class Frame {
             // Guard on methodName too: only <init> is safely skippable; any
             // other invokespecial to java/lang/Object (e.g. super.toString())
             // should fatalError so it's diagnosed rather than silently dropped.
-            if className == "java/lang/Object" && methodName == "<init>" { return .continue }
+            // No JDK stubs — treat <init> on the standard exception/Object hierarchy as no-ops.
+            let jdkInitNoOps = ["java/lang/Object", "java/lang/Throwable",
+                                 "java/lang/Exception", "java/lang/RuntimeException", "java/lang/Error"]
+            if jdkInitNoOps.contains(className) && methodName == "<init>" { return .continue }
             guard case .success(let cls) = Runtime.vm.findOrCreateClass(named: className), let cls else {
                 fatalError("invokespecial: class not found: \(className)")
             }
@@ -1177,6 +1198,25 @@ class Frame {
         default:
             fatalError("Unimplemented opcode \(opcode) at pc \(instructionStart) in \(method.name.string)")
         }
+    }
+
+    // MARK: - Exception handling helpers
+
+    /// Searches this frame's exception table for a handler covering `throwPC`
+    /// that matches `obj`'s type.  Returns the handler PC if found, else nil.
+    func findExceptionHandler(at throwPC: Int, for obj: Object) -> Int? {
+        guard let table = codeAttribute?.exceptionTable else { return nil }
+        for entry in table {
+            guard throwPC >= Int(entry.startPC) && throwPC < Int(entry.endPC) else { continue }
+            if entry.catchType == 0 { return Int(entry.handlerPC) }   // finally
+            guard let classConst = constantPool[entry.catchType] as? ClassOrModuleOrPackageConstant,
+                  let nameConst  = constantPool[classConst.nameIndex] as? Utf8Constant
+            else { continue }
+            if isAssignableTo(obj, targetName: nameConst.string as String) {
+                return Int(entry.handlerPC)
+            }
+        }
+        return nil
     }
 
     // MARK: - isAssignableTo
