@@ -1085,9 +1085,119 @@ class Frame {
             }
             return .continue
 
+        // ── checkcast / instanceof ────────────────────────────────────────────
+        case .checkcast:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let classConst = constantPool[index] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant
+            else { fatalError("checkcast: malformed constant pool at \(index)") }
+            let targetName = classNameConst.string as String
+            let value = pop()
+            switch value {
+            case .reference(nil):
+                push(value)  // null passes any checkcast per JVM spec
+            case .reference(let obj?):
+                if !isAssignableTo(obj, targetName: targetName) {
+                    fatalError("checkcast: ClassCastException — \(obj.clazz.name) cannot be cast to \(targetName)")
+                }
+                push(value)
+            case .array:
+                push(value)  // array cast: accept (no deep type check yet)
+            default:
+                fatalError("checkcast: unexpected value type on stack")
+            }
+            return .continue
+
+        case .instanceof:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            guard let classConst = constantPool[index] as? ClassOrModuleOrPackageConstant,
+                  let classNameConst = constantPool[classConst.nameIndex] as? Utf8Constant
+            else { fatalError("instanceof: malformed constant pool at \(index)") }
+            let targetName = classNameConst.string as String
+            let value = pop()
+            switch value {
+            case .reference(nil):
+                push(.int(0))  // null instanceof anything = false
+            case .reference(let obj?):
+                push(.int(isAssignableTo(obj, targetName: targetName) ? 1 : 0))
+            case .array:
+                push(.int(targetName.hasPrefix("[") ? 1 : 0))
+            default:
+                fatalError("instanceof: unexpected value type on stack")
+            }
+            return .continue
+
+        // ── invokeinterface ───────────────────────────────────────────────────
+        case .invokeinterface:
+            let hi = Int(code[pc]); pc += 1
+            let lo = Int(code[pc]); pc += 1
+            let index = UInt16(hi << 8 | lo)
+            pc += 2  // skip count byte and trailing 0
+            guard let methodRef = constantPool[index] as? MethodOrFieldRefConstant,
+                  let nameAndType = constantPool[methodRef.nameAndTypeIndex] as? NameAndTypeConstant,
+                  let nameConst = constantPool[nameAndType.nameIndex] as? Utf8Constant,
+                  let descConst = constantPool[nameAndType.descriptorIndex] as? Utf8Constant
+            else { fatalError("invokeinterface: malformed constant pool at \(index)") }
+            let methodName = nameConst.string as String
+            let descriptor = descConst.string as String
+            let argCount   = parseArgumentCount(descriptor: descriptor)
+            let args: [Value] = (0..<argCount).map { _ in pop() }.reversed()
+            let receiver = pop()
+            guard let objOptional = receiver.asReference else {
+                fatalError("invokeinterface: expected reference on stack for \(methodName)")
+            }
+            guard let obj = objOptional else {
+                fatalError("invokeinterface: NullPointerException — null receiver for \(methodName)")
+            }
+            var calleeMethod: MethodInfo?
+            var calleeClass: Class?
+            var searchCls: Class? = obj.clazz
+            while let c = searchCls {
+                if let m = c.findMethod(named: methodName, descriptor: descriptor) {
+                    calleeMethod = m
+                    calleeClass  = c
+                    break
+                }
+                let superName = c.classFile.superclassName
+                guard !superName.isEmpty && superName != "java/lang/Object" else { break }
+                if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) {
+                    searchCls = s
+                } else { break }
+            }
+            guard let calleeMethod, let calleeClass else {
+                fatalError("invokeinterface: method not found: \(methodName)\(descriptor) in \(obj.clazz.name)")
+            }
+            return .invoke(frame: Frame(owningClass: calleeClass, method: calleeMethod,
+                                        arguments: [receiver] + args))
+
         default:
             fatalError("Unimplemented opcode \(opcode) at pc \(instructionStart) in \(method.name.string)")
         }
+    }
+
+    // MARK: - isAssignableTo
+
+    private func isAssignableTo(_ obj: Object, targetName: String) -> Bool {
+        if targetName == "java/lang/Object" { return true }
+        var cls: Class? = obj.clazz
+        while let c = cls {
+            if c.name == targetName { return true }
+            // Check directly-implemented interfaces at this level.
+            for ifaceIdx in c.classFile.interfaceIndicies {
+                if let ifaceConst = c.classFile.constantPool[ifaceIdx] as? ClassOrModuleOrPackageConstant,
+                   let ifaceNameConst = c.classFile.constantPool[ifaceConst.nameIndex] as? Utf8Constant,
+                   ifaceNameConst.string as String == targetName { return true }
+            }
+            let superName = c.classFile.superclassName
+            guard !superName.isEmpty && superName != "java/lang/Object" else { break }
+            if case .success(let s) = Runtime.vm.findOrCreateClass(named: superName) { cls = s }
+            else { break }
+        }
+        return false
     }
 
     // MARK: - invokestatic
